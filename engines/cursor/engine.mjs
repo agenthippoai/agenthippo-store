@@ -8,8 +8,11 @@
 
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+const CURSOR_API_KEY_ENV = 'CURSOR_API_KEY';
 
 const SDK_PACKAGE = '@cursor/sdk';
 const ENGINE_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -78,33 +81,60 @@ async function loadSdk() {
 }
 
 /**
+ * @param {string | undefined} value
+ */
+function isValidCursorApiKey(value) {
+	const trimmed = value?.trim();
+	if (!trimmed || trimmed === 'sk-dummy') {
+		return false;
+	}
+	return trimmed.startsWith('crsr_');
+}
+
+/**
  * @param {import('./engine-contract.d.ts').CustomEngineTurn} turn
+ * @returns {string | undefined}
  */
 function resolveApiKey(turn) {
 	// AgentHippo may copy the LiteLLM/Anthropic routing key into turn.env.CURSOR_API_KEY
 	// via manifest apiKeyEnvVar. Prefer the real Cursor key from the process environment.
 	const candidates = [
-		process.env.CURSOR_API_KEY,
-		turn.env.CURSOR_API_KEY,
+		process.env[CURSOR_API_KEY_ENV],
+		turn.env[CURSOR_API_KEY_ENV],
 	].map((value) => value?.trim()).filter(Boolean);
 
 	for (const key of candidates) {
-		if (key === 'sk-dummy') {
-			continue;
-		}
-		if (key.startsWith('crsr_')) {
+		if (isValidCursorApiKey(key)) {
 			return key;
 		}
 	}
 
 	const fromRouting = turn.routing.apiKey?.trim();
-	if (fromRouting && fromRouting.startsWith('crsr_')) {
+	if (isValidCursorApiKey(fromRouting)) {
 		return fromRouting;
 	}
 
-	throw new Error(
-		'Cursor SDK auth is not configured. Set CURSOR_API_KEY (user or service account key from Cursor dashboard).',
-	);
+	return undefined;
+}
+
+function formatMissingCursorApiKeyMessage() {
+	const home = os.homedir();
+	const envFilePath = `~${path.join(home, '.agent-hippo', '.env').slice(home.length)}`;
+	return [
+		'**Cursor** needs a Cursor API key before it can run.',
+		'',
+		`Add this line to \`${envFilePath}\` (create the file if it does not exist):`,
+		'',
+		'```',
+		`${CURSOR_API_KEY_ENV}=crsr_your_key_here`,
+		'```',
+		'',
+		'Get a key from the Cursor dashboard (user or service account). Keys start with `crsr_`.',
+		'',
+		`If \`${CURSOR_API_KEY_ENV}\` is already set in your shell environment, fix or unset it there too — shell values take priority over \`${envFilePath}\`.`,
+		'',
+		'Save the file, then send your message again.',
+	].join('\n');
 }
 
 /**
@@ -185,10 +215,17 @@ export class CursorSdkEngine {
 	 * @param {import('./engine-contract.d.ts').CustomEngineTurn} turn
 	 */
 	async run(turn) {
-		const { Agent, CursorAgentError } = await loadSdk();
-		ensureRipgrepOnPath(turn);
 		const { emitter, runtime, signal } = turn;
 		const apiKey = resolveApiKey(turn);
+		if (!apiKey) {
+			runtime.logger.warn('[Cursor SDK] Skipping run: missing or invalid CURSOR_API_KEY');
+			await emitter.text(formatMissingCursorApiKeyMessage());
+			await emitter.done();
+			return { nativeSessionId: turn.session.nativeSessionId };
+		}
+
+		const { Agent, CursorAgentError } = await loadSdk();
+		ensureRipgrepOnPath(turn);
 		const apiKeyHash = createHash('sha256').update(apiKey).digest('hex');
 		const model = { id: turn.modelId };
 		const local = {
