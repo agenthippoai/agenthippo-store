@@ -1,0 +1,7 @@
+version: 1
+id: fleet-copy
+name: Fleet Copy
+semver: 1.0.2
+scope: global
+scripts:
+  - agent-fleet-widget.js
