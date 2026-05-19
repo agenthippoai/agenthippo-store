@@ -1,0 +1,24 @@
+{
+  "version": 2,
+  "id": "grok",
+  "displayName": "Grok",
+  "description": "xAI Grok Build CLI agent engine (https://x.ai/news/grok-build-cli)",
+  "entry": "./engine.mjs",
+  "engineExport": "GrokCliEngine",
+  "homeEnvVar": "GROK_HOME",
+  "workspaceSync": {
+    "enabled": true,
+    "dir": ".grok",
+    "rulesFile": "GROK.md",
+    "includeSkills": true,
+    "includeRules": true
+  },
+  "promptInjection": {
+    "mode": "message-suffix"
+  },
+  "model": {
+    "defaultModel": "grok-build",
+    "apiKeyEnvVar": "XAI_API_KEY",
+    "openaiBaseUrlEnvVar": "GROK_MODELS_BASE_URL"
+  }
+}
