@@ -1,0 +1,824 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Session Comparison</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1220;
+      --panel: #111b2f;
+      --panel-soft: #15243d;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --border: #21324d;
+      --accent: #3b82f6;
+      --good: #10b981;
+      --warn: #f59e0b;
+      --bad: #ef4444;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font: 13px/1.45 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .root {
+      display: grid;
+      grid-template-columns: minmax(240px, 300px) 1fr;
+      min-height: 96vh;
+    }
+    .sidebar {
+      border-right: 1px solid var(--border);
+      background: #0d172b;
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+      align-content: start;
+    }
+    .title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .title {
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .pill {
+      border: 1px solid #25467d;
+      color: #93c5fd;
+      background: #132341;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 11px;
+    }
+    .search {
+      width: 100%;
+      background: #0a1324;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 8px 10px;
+      outline: none;
+    }
+    .search:focus { border-color: var(--accent); }
+    .session-list {
+      max-height: 74vh;
+      overflow: auto;
+      display: grid;
+      gap: 8px;
+      padding-right: 2px;
+    }
+    .session-item {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--panel);
+      padding: 9px;
+      display: grid;
+      gap: 6px;
+    }
+    .session-item-title {
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: center;
+    }
+    .live {
+      border: 1px solid #14532d;
+      color: #86efac;
+      background: #052e16;
+      border-radius: 999px;
+      font-size: 10px;
+      padding: 1px 6px;
+      font-weight: 700;
+    }
+    .session-meta {
+      color: var(--muted);
+      font-size: 11px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+    .assign {
+      display: flex;
+      gap: 6px;
+    }
+    .assign button {
+      flex: 1;
+      border: 1px solid #2f4f7d;
+      background: #11213c;
+      color: #cbd5e1;
+      border-radius: 7px;
+      font-size: 11px;
+      padding: 4px 7px;
+      cursor: pointer;
+    }
+    .assign button:hover { border-color: #3b82f6; color: #dbeafe; }
+    .main {
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+      min-width: 0;
+      align-content: start;
+    }
+    .controls {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--panel);
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+    }
+    .selectors {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 10px;
+      align-items: center;
+    }
+    .selectors label {
+      display: grid;
+      gap: 4px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+    select {
+      width: 100%;
+      background: #0a1324;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 7px 8px;
+      font-size: 12px;
+      outline: none;
+    }
+    select:focus { border-color: var(--accent); }
+    .vs {
+      text-align: center;
+      font-size: 11px;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 5px 8px;
+      background: #0f1b2f;
+    }
+    .quick-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .quick-actions button {
+      border: 1px solid #2f4f7d;
+      background: #11213c;
+      color: #cbd5e1;
+      border-radius: 7px;
+      font-size: 11px;
+      padding: 5px 9px;
+      cursor: pointer;
+    }
+    .quick-actions button:hover { border-color: #3b82f6; color: #dbeafe; }
+    .summary {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #0f1a2f;
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+    }
+    .summary-title {
+      font-weight: 700;
+      color: #bfdbfe;
+    }
+    .summary-list {
+      margin: 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 4px;
+      color: #cbd5e1;
+      font-size: 12px;
+    }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(130px, 1fr));
+      gap: 8px;
+    }
+    .metric {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #0d1729;
+      padding: 8px;
+      display: grid;
+      gap: 3px;
+    }
+    .metric-label { color: var(--muted); font-size: 11px; }
+    .metric-value { font-size: 15px; font-weight: 700; }
+    .metric-delta { font-size: 11px; }
+    .delta-good { color: #86efac; }
+    .delta-bad { color: #fca5a5; }
+    .delta-neutral { color: #cbd5e1; }
+    .panes {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .pane {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--panel-soft);
+      padding: 9px;
+      display: grid;
+      gap: 6px;
+    }
+    .pane h3 {
+      margin: 0;
+      font-size: 12px;
+      color: #bfdbfe;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .small {
+      color: var(--muted);
+      font-size: 11px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      background: #0b1628;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 7px 8px;
+      border-top: 1px solid rgba(148, 163, 184, 0.2);
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #101f37;
+      color: #93c5fd;
+      font-size: 11px;
+      border-top: none;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    .table-wrap {
+      overflow: auto;
+      max-height: 300px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .seq-wrap {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: 1fr 1fr;
+    }
+    .seq-card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #0b1628;
+      padding: 8px;
+      display: grid;
+      gap: 6px;
+    }
+    .seq-list {
+      margin: 0;
+      padding-left: 18px;
+      color: #cbd5e1;
+      max-height: 220px;
+      overflow: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+    .loop-badge {
+      color: #fde68a;
+      border: 1px solid #78350f;
+      background: #422006;
+      border-radius: 999px;
+      font-size: 10px;
+      padding: 1px 6px;
+      margin-left: 6px;
+      white-space: nowrap;
+    }
+    .empty {
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      background: #0c1525;
+      padding: 12px;
+      text-align: center;
+    }
+    @media (max-width: 1080px) {
+      .root { grid-template-columns: 1fr; }
+      .sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+      .selectors { grid-template-columns: 1fr; }
+      .vs { justify-self: start; }
+      .metrics { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
+      .panes { grid-template-columns: 1fr; }
+      .seq-wrap { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="root">
+    <aside class="sidebar">
+      <div class="title-row">
+        <div class="title">Session Comparison</div>
+        <div class="pill">Interactive HTML</div>
+      </div>
+      <input id="session-search" class="search" placeholder="Search session / agent / version" />
+      <div id="session-list" class="session-list"></div>
+    </aside>
+    <main class="main">
+      <section class="controls">
+        <div class="selectors">
+          <label>
+            Session A
+            <select id="session-a"></select>
+          </label>
+          <div class="vs">VS</div>
+          <label>
+            Session B
+            <select id="session-b"></select>
+          </label>
+        </div>
+        <div class="quick-actions">
+          <button id="copy-a" type="button">Copy A session id</button>
+          <button id="copy-b" type="button">Copy B session id</button>
+          <button id="swap" type="button">Swap A/B</button>
+        </div>
+      </section>
+
+      <section class="summary">
+        <div class="summary-title">What changed</div>
+        <ul id="summary-list" class="summary-list"></ul>
+      </section>
+
+      <section class="metrics" id="metrics"></section>
+
+      <section class="panes" id="session-panes"></section>
+
+      <section class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Tool</th>
+              <th>A</th>
+              <th>B</th>
+              <th>Delta (B-A)</th>
+            </tr>
+          </thead>
+          <tbody id="tool-diff-body"></tbody>
+        </table>
+      </section>
+
+      <section class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>A Cost</th>
+              <th>B Cost</th>
+              <th>Calls A/B</th>
+              <th>Delta (B-A)</th>
+            </tr>
+          </thead>
+          <tbody id="model-diff-body"></tbody>
+        </table>
+      </section>
+
+      <section class="seq-wrap">
+        <div class="seq-card">
+          <div class="summary-title">Tool call order (first 36)</div>
+          <ol id="tool-seq-a" class="seq-list"></ol>
+        </div>
+        <div class="seq-card">
+          <div class="summary-title">Tool call order (first 36)</div>
+          <ol id="tool-seq-b" class="seq-list"></ol>
+        </div>
+      </section>
+
+      <section class="seq-wrap">
+        <div class="seq-card">
+          <div class="summary-title">LLM model order (first 36)</div>
+          <ol id="llm-seq-a" class="seq-list"></ol>
+        </div>
+        <div class="seq-card">
+          <div class="summary-title">LLM model order (first 36)</div>
+          <ol id="llm-seq-b" class="seq-list"></ol>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script>
+    const data = {"version":1,"generatedAt":"2026-05-21T22:59:16.375Z","activeSessionId":null,"limits":{"sessionLimit":28,"maxLlmEventsPerSession":220,"maxToolEventsPerSession":260,"maxSequenceRender":36},"sessions":[{"sessionId":"headless-1779271256337","handle":"headless...71256337","isActive":true,"agentId":"default","agentVersion":"","engine":"","totalCost":0,"llmCalls":1,"requestCount":1,"totalTokens":0,"avgLatencyMs":4,"totalLatencyMs":4,"startedMs":1779271257802,"latestMs":1779271257802,"modelBreakdown":[{"model":"claude-sonnet-4-5-20250929","cost":0,"calls":1,"tokens":0}],"llmSequence":[{"requestId":"(unknown)","startMs":1779271257802,"model":"claude-sonnet-4-5-20250929","cost":0}],"toolCounts":[],"toolSequence":[],"loops":{"highFrequency":[],"consecutive":[]}},{"sessionId":"d5cc85b4-9b58-4369-94b9-2c1ca7d96c45","handle":"d5cc85b4...a7d96c45","isActive":false,"agentId":"data-analyst","agentVersion":"","engine":"","totalCost":0.010891,"llmCalls":2,"requestCount":1,"totalTokens":16236,"avgLatencyMs":2785,"totalLatencyMs":5569,"startedMs":1779268110259,"latestMs":1779268131401,"modelBreakdown":[{"model":"claude-haiku-4-5-20251001","cost":0.010209,"calls":1,"tokens":9569},{"model":"gpt-4.1-nano-2025-04-14","cost":0.000682,"calls":1,"tokens":6667}],"llmSequence":[{"requestId":"(unknown)","startMs":1779268110259,"model":"claude-haiku-4-5-20251001","cost":0.010209},{"requestId":"(unknown)","startMs":1779268131401,"model":"gpt-4.1-nano-2025-04-14","cost":0.0006822999999999999}],"toolCounts":[],"toolSequence":[],"loops":{"highFrequency":[],"consecutive":[]}},{"sessionId":"d319ec02-d564-446c-9b27-ed98f158e2c4","handle":"d319ec02...f158e2c4","isActive":false,"agentId":"data-analyst","agentVersion":"","engine":"","totalCost":0,"llmCalls":1,"requestCount":1,"totalTokens":0,"avgLatencyMs":372,"totalLatencyMs":372,"startedMs":1779236002388,"latestMs":1779236002388,"modelBreakdown":[{"model":"claude-haiku-4-5-20251001","cost":0,"calls":1,"tokens":0}],"llmSequence":[{"requestId":"(unknown)","startMs":1779236002388,"model":"claude-haiku-4-5-20251001","cost":0}],"toolCounts":[],"toolSequence":[],"loops":{"highFrequency":[],"consecutive":[]}},{"sessionId":"80f091a5-b100-43c7-a6dd-97b6b8816dc2","handle":"80f091a5...b8816dc2","isActive":false,"agentId":"default","agentVersion":"","engine":"","totalCost":0.001651,"llmCalls":1,"requestCount":1,"totalTokens":16497,"avgLatencyMs":3860,"totalLatencyMs":3860,"startedMs":1779139622194,"latestMs":1779139622194,"modelBreakdown":[{"model":"gpt-4.1-nano-2025-04-14","cost":0.001651,"calls":1,"tokens":16497}],"llmSequence":[{"requestId":"(unknown)","startMs":1779139622194,"model":"gpt-4.1-nano-2025-04-14","cost":0.0016506}],"toolCounts":[],"toolSequence":[],"loops":{"highFrequency":[],"consecutive":[]}},{"sessionId":"ff7851c1-90f1-42ea-90b2-254fa37501c7","handle":"ff7851c1...a37501c7","isActive":false,"agentId":"","agentVersion":"","engine":"","totalCost":0,"llmCalls":3,"requestCount":1,"totalTokens":0,"avgLatencyMs":850,"totalLatencyMs":2551,"startedMs":1778036400508,"latestMs":1778309820322,"modelBreakdown":[{"model":"claude-opus-4-7","cost":0,"calls":3,"tokens":0}],"llmSequence":[{"requestId":"(unknown)","startMs":1778036400508,"model":"claude-opus-4-7","cost":0},{"requestId":"(unknown)","startMs":1778221990317,"model":"claude-opus-4-7","cost":0},{"requestId":"(unknown)","startMs":1778309820322,"model":"claude-opus-4-7","cost":0}],"toolCounts":[],"toolSequence":[],"loops":{"highFrequency":[],"consecutive":[]}},{"sessionId":"af457a6d-5955-4f0f-999d-76fa578d15f1","handle":"af457a6d...578d15f1","isActive":false,"agentId":"default","agentVersion":"","engine":"","totalCost":0.001635,"llmCalls":1,"requestCount":1,"totalTokens":16340,"avgLatencyMs":3748,"totalLatencyMs":3748,"startedMs":1777833965653,"latestMs":1777833965653,"modelBreakdown":[{"model":"gpt-4.1-nano-2025-04-14","cost":0.001635,"calls":1,"tokens":16340}],"llmSequence":[{"requestId":"(unknown)","startMs":1777833965653,"model":"gpt-4.1-nano-2025-04-14","cost":0.0016349}],"toolCounts":[],"toolSequence":[],"loops":{"highFrequency":[],"consecutive":[]}},{"sessionId":"71cd58c0-7a76-4697-b832-c0dd3bbcf681","handle":"71cd58c0...3bbcf681","isActive":false,"agentId":"default","agentVersion":"","engine":"","totalCost":0.000569,"llmCalls":1,"requestCount":1,"totalTokens":10845,"avgLatencyMs":3314,"totalLatencyMs":3314,"startedMs":1777826304494,"latestMs":1777826304494,"modelBreakdown":[{"model":"gpt-4.1-nano-2025-04-14","cost":0.000569,"calls":1,"tokens":10845}],"llmSequence":[{"requestId":"(unknown)","startMs":1777826304494,"model":"gpt-4.1-nano-2025-04-14","cost":0.0005694}],"toolCounts":[],"toolSequence":[],"loops":{"highFrequency":[],"consecutive":[]}},{"sessionId":"42e1d45e-af46-4266-b2f6-25f105c71bc6","handle":"42e1d45e...05c71bc6","isActive":false,"agentId":"default","agentVersion":"","engine":"","totalCost":0.657244,"llmCalls":51,"requestCount":1,"totalTokens":3302588,"avgLatencyMs":2114,"totalLatencyMs":107814,"startedMs":1777821002492,"latestMs":1777821470997,"modelBreakdown":[{"model":"claude-haiku-4-5","cost":0.64677,"calls":48,"tokens":3293302},{"model":"litellm/claude-haiku-4-5-subs","cost":0.010474,"calls":1,"tokens":9286},{"model":"claude-haiku-4-5-20251001","cost":0,"calls":2,"tokens":0}],"llmSequence":[{"requestId":"(unknown)","startMs":1777821002492,"model":"litellm/claude-haiku-4-5-subs","cost":0.010473999999999999},{"requestId":"(unknown)","startMs":1777821049186,"model":"claude-haiku-4-5","cost":0.027244},{"requestId":"(unknown)","startMs":1777821050972,"model":"claude-haiku-4-5","cost":0.0046299},{"requestId":"(unknown)","startMs":1777821055253,"model":"claude-haiku-4-5","cost":0.010665250000000001},{"requestId":"(unknown)","startMs":1777821058024,"model":"claude-haiku-4-5","cost":0.0151483},{"requestId":"(unknown)","startMs":1777821061497,"model":"claude-haiku-4-5","cost":0.009434149999999999},{"requestId":"(unknown)","startMs":1777821063292,"model":"claude-haiku-4-5","cost":0.0051409},{"requestId":"(unknown)","startMs":1777821064852,"model":"claude-haiku-4-5","cost":0.0077559000000000005},{"requestId":"(unknown)","startMs":1777821067801,"model":"claude-haiku-4-5","cost":0.0173283},{"requestId":"(unknown)","startMs":1777821071384,"model":"claude-haiku-4-5","cost":0.00588685},{"requestId":"(unknown)","startMs":1777821073274,"model":"claude-haiku-4-5","cost":0.0056701500000000005},{"requestId":"(unknown)","startMs":1777821074502,"model":"claude-haiku-4-5","cost":0.01332655},{"requestId":"(unknown)","startMs":1777821205065,"model":"claude-haiku-4-5","cost":0.0470995},{"requestId":"(unknown)","startMs":1777821207522,"model":"claude-haiku-4-5","cost":0.0062108499999999995},{"requestId":"(unknown)","startMs":1777821208742,"model":"claude-haiku-4-5","cost":0.010277449999999999},{"requestId":"(unknown)","startMs":1777821211505,"model":"claude-haiku-4-5","cost":0.006786749999999999},{"requestId":"(unknown)","startMs":1777821213842,"model":"claude-haiku-4-5","cost":0.00818415},{"requestId":"(unknown)","startMs":1777821216328,"model":"claude-haiku-4-5","cost":0.0076186},{"requestId":"(unknown)","startMs":1777821218067,"model":"claude-haiku-4-5","cost":0.0139584},{"requestId":"(unknown)","startMs":1777821221139,"model":"claude-haiku-4-5","cost":0.011187550000000001},{"requestId":"(unknown)","startMs":1777821223446,"model":"claude-haiku-4-5","cost":0.00990655},{"requestId":"(unknown)","startMs":1777821228886,"model":"claude-haiku-4-5-20251001","cost":0},{"requestId":"(unknown)","startMs":1777821228886,"model":"claude-haiku-4-5-20251001","cost":0},{"requestId":"(unknown)","startMs":1777821230357,"model":"claude-haiku-4-5","cost":0.008388999999999999},{"requestId":"(unknown)","startMs":1777821232320,"model":"claude-haiku-4-5","cost":0.00862315},{"requestId":"(unknown)","startMs":1777821234248,"model":"claude-haiku-4-5","cost":0.008128549999999998},{"requestId":"(unknown)","startMs":1777821236498,"model":"claude-haiku-4-5","cost":0.008035549999999999},{"requestId":"(unknown)","startMs":1777821238445,"model":"claude-haiku-4-5","cost":0.011998700000000001},{"requestId":"(unknown)","startMs":1777821240904,"model":"claude-haiku-4-5","cost":0.00842545},{"requestId":"(unknown)","startMs":1777821243016,"model":"claude-haiku-4-5","cost":0.009568},{"requestId":"(unknown)","startMs":1777821245510,"model":"claude-haiku-4-5","cost":0.00867},{"requestId":"(unknown)","startMs":1777821247596,"model":"claude-haiku-4-5","cost":0.01420905},{"requestId":"(unknown)","startMs":1777821254664,"model":"claude-haiku-4-5","cost":0.01284315},{"requestId":"(unknown)","startMs":1777821256993,"model":"claude-haiku-4-5","cost":0.01260895},{"requestId":"(unknown)","startMs":1777821260953,"model":"claude-haiku-4-5","cost":0.009446050000000001},{"requestId":"(unknown)","startMs":1777821262713,"model":"claude-haiku-4-5","cost":0.015049949999999998},{"requestId":"(unknown)","startMs":1777821265992,"model":"claude-haiku-4-5","cost":0.009975399999999999},{"requestId":"(unknown)","startMs":1777821267819,"model":"claude-haiku-4-5","cost":0.011043399999999998},{"requestId":"(unknown)","startMs":1777821270222,"model":"claude-haiku-4-5","cost":0.01046505},{"requestId":"(unknown)","startMs":1777821273384,"model":"claude-haiku-4-5","cost":0.0134945},{"requestId":"(unknown)","startMs":1777821277562,"model":"claude-haiku-4-5","cost":0.01657915},{"requestId":"(unknown)","startMs":1777821286255,"model":"claude-haiku-4-5","cost":0.013370400000000001},{"requestId":"(unknown)","startMs":1777821290192,"model":"claude-haiku-4-5","cost":0.0144119},{"requestId":"(unknown)","startMs":1777821296608,"model":"claude-haiku-4-5","cost":0.011350349999999999},{"requestId":"(unknown)","startMs":1777821302624,"model":"claude-haiku-4-5","cost":0.0104987},{"requestId":"(unknown)","startMs":1777821338389,"model":"claude-haiku-4-5","cost":0.0107207},{"requestId":"(unknown)","startMs":1777821341184,"model":"claude-haiku-4-5","cost":0.0125909},{"requestId":"(unknown)","startMs":1777821403405,"model":"claude-haiku-4-5","cost":0.09758425},{"requestId":"(unknown)","startMs":1777821405461,"model":"claude-haiku-4-5","cost":0.01036275},{"requestId":"(unknown)","startMs":1777821468234,"model":"claude-haiku-4-5","cost":0.01181675},{"requestId":"(unknown)","startMs":1777821470997,"model":"claude-haiku-4-5","cost":0.0130498}],"toolCounts":[{"tool":"Read","count":18},{"tool":"Grep","count":13},{"tool":"Bash","count":11},{"tool":"Edit","count":4},{"tool":"Agent","count":2},{"tool":"Glob","count":1}],"toolSequence":[{"requestId":"req-f37f5fb2","toolName":"Read","timestamp":1777821050062},{"requestId":"req-f37f5fb2","toolName":"Read","timestamp":1777821050177},{"requestId":"req-f37f5fb2","toolName":"Glob","timestamp":1777821052076},{"requestId":"req-f37f5fb2","toolName":"Grep","timestamp":1777821052495},{"requestId":"req-f37f5fb2","toolName":"Grep","timestamp":1777821052744},{"requestId":"req-f37f5fb2","toolName":"Read","timestamp":1777821056373},{"requestId":"req-f37f5fb2","toolName":"Read","timestamp":1777821057030},{"requestId":"req-f37f5fb2","toolName":"Read","timestamp":1777821057034},{"requestId":"req-f37f5fb2","toolName":"Grep","timestamp":1777821059975},{"requestId":"req-f37f5fb2","toolName":"Grep","timestamp":1777821061705},{"requestId":"req-f37f5fb2","toolName":"Grep","timestamp":1777821063733},{"requestId":"req-f37f5fb2","toolName":"Read","timestamp":1777821066603},{"requestId":"req-f37f5fb2","toolName":"Grep","timestamp":1777821069972},{"requestId":"req-f37f5fb2","toolName":"Grep","timestamp":1777821071833},{"requestId":"req-f37f5fb2","toolName":"Read","timestamp":1777821073448},{"requestId":"req-7a2d3913","toolName":"Grep","timestamp":1777821205988},{"requestId":"req-7a2d3913","toolName":"Grep","timestamp":1777821206605},{"requestId":"req-7a2d3913","toolName":"Read","timestamp":1777821207979},{"requestId":"req-7a2d3913","toolName":"Bash","timestamp":1777821210084},{"requestId":"req-7a2d3913","toolName":"Read","timestamp":1777821212749},{"requestId":"req-7a2d3913","toolName":"Grep","timestamp":1777821214585},{"requestId":"req-7a2d3913","toolName":"Grep","timestamp":1777821216736},{"requestId":"req-7a2d3913","toolName":"Read","timestamp":1777821220012},{"requestId":"req-7a2d3913","toolName":"Bash","timestamp":1777821221539},{"requestId":"req-7a2d3913","toolName":"Agent","timestamp":1777821227182},{"requestId":"req-7a2d3913","toolName":"Agent","timestamp":1777821228825},{"requestId":"req-7a2d3913","toolName":"Bash","timestamp":1777821230912},{"requestId":"req-7a2d3913","toolName":"Grep","timestamp":1777821232889},{"requestId":"req-7a2d3913","toolName":"Grep","timestamp":1777821235071},{"requestId":"req-7a2d3913","toolName":"Read","timestamp":1777821236865},{"requestId":"req-7a2d3913","toolName":"Bash","timestamp":1777821239162},{"requestId":"req-7a2d3913","toolName":"Read","timestamp":1777821241824},{"requestId":"req-7a2d3913","toolName":"Bash","timestamp":1777821243976},{"requestId":"req-7a2d3913","toolName":"Read","timestamp":1777821245941},{"requestId":"req-7a2d3913","toolName":"Read","timestamp":1777821253385},{"requestId":"req-7a2d3913","toolName":"Read","timestamp":1777821255553},{"requestId":"req-7a2d3913","toolName":"Bash","timestamp":1777821258907},{"requestId":"req-7a2d3913","toolName":"Read","timestamp":1777821261360},{"requestId":"req-7a2d3913","toolName":"Bash","timestamp":1777821264458},{"requestId":"req-7a2d3913","toolName":"Read","timestamp":1777821266812},{"requestId":"req-7a2d3913","toolName":"Bash","timestamp":1777821268682},{"requestId":"req-7a2d3913","toolName":"Read","timestamp":1777821271746},{"requestId":"req-7a2d3913","toolName":"Edit","timestamp":1777821273876},{"requestId":"req-7a2d3913","toolName":"Edit","timestamp":1777821278197},{"requestId":"req-7a2d3913","toolName":"Edit","timestamp":1777821287111},{"requestId":"req-7a2d3913","toolName":"Edit","timestamp":1777821291035},{"requestId":"req-7a2d3913","toolName":"Bash","timestamp":1777821297255},{"requestId":"req-7a2d3913","toolName":"Bash","timestamp":1777821303244},{"requestId":"req-7a2d3913","toolName":"Bash","timestamp":1777821339158}],"loops":{"highFrequency":[{"requestId":"req-7a2d3913","toolName":"Read","count":11},{"requestId":"req-7a2d3913","toolName":"Bash","count":11},{"requestId":"req-f37f5fb2","toolName":"Read","count":7},{"requestId":"req-f37f5fb2","toolName":"Grep","count":7},{"requestId":"req-7a2d3913","toolName":"Grep","count":6}],"consecutive":[{"requestId":"req-7a2d3913","toolName":"Edit","count":4,"startTs":1777821273876,"endTs":1777821291035}]}},{"sessionId":"a1b4eca4-4594-4fd1-b5b9-3ad2bf8b6e76","handle":"a1b4eca4...bf8b6e76","isActive":false,"agentId":"default","agentVersion":"","engine":"","totalCost":0,"llmCalls":12,"requestCount":1,"totalTokens":0,"avgLatencyMs":440,"totalLatencyMs":5281,"startedMs":1777820926660,"latestMs":1777821155304,"modelBreakdown":[{"model":"gpt-5.3-codex","cost":0,"calls":12,"tokens":0}],"llmSequence":[{"requestId":"(unknown)","startMs":1777820926660,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777820934272,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777820941194,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777820941194,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777820949217,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777820959957,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777820974272,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777820998265,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777821037577,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777821078040,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777821116731,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777821155304,"model":"gpt-5.3-codex","cost":0}],"toolCounts":[],"toolSequence":[],"loops":{"highFrequency":[],"consecutive":[]}},{"sessionId":"ac794df1-3ff3-458f-83b5-e2efe8624f93","handle":"ac794df1...e8624f93","isActive":false,"agentId":"default","agentVersion":"","engine":"","totalCost":17.261516,"llmCalls":224,"requestCount":1,"totalTokens":20261461,"avgLatencyMs":5937,"totalLatencyMs":1329916,"startedMs":1777270098629,"latestMs":1777278638843,"modelBreakdown":[{"model":"gpt-5.3-codex","cost":17.261516,"calls":224,"tokens":20261461}],"llmSequence":[{"requestId":"(unknown)","startMs":1777270098629,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777270106531,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777270113922,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777270121715,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777270132056,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777270147043,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777270171173,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777270223439,"model":"gpt-5.3-codex","cost":0.00754705},{"requestId":"(unknown)","startMs":1777270231860,"model":"gpt-5.3-codex","cost":0.03256225},{"requestId":"(unknown)","startMs":1777270246811,"model":"gpt-5.3-codex","cost":0.03250625},{"requestId":"(unknown)","startMs":1777270250196,"model":"gpt-5.3-codex","cost":0.007023799999999999},{"requestId":"(unknown)","startMs":1777270252807,"model":"gpt-5.3-codex","cost":0.006375250000000001},{"requestId":"(unknown)","startMs":1777270258157,"model":"gpt-5.3-codex","cost":0.0169428},{"requestId":"(unknown)","startMs":1777270264792,"model":"gpt-5.3-codex","cost":0.048912500000000005},{"requestId":"(unknown)","startMs":1777270271280,"model":"gpt-5.3-codex","cost":0.04789225},{"requestId":"(unknown)","startMs":1777270274811,"model":"gpt-5.3-codex","cost":0.05215},{"requestId":"(unknown)","startMs":1777270282692,"model":"gpt-5.3-codex","cost":0.0559475},{"requestId":"(unknown)","startMs":1777270288551,"model":"gpt-5.3-codex","cost":0.03401124999999999},{"requestId":"(unknown)","startMs":1777270297377,"model":"gpt-5.3-codex","cost":0.033673499999999995},{"requestId":"(unknown)","startMs":1777270306743,"model":"gpt-5.3-codex","cost":0.0172753},{"requestId":"(unknown)","startMs":1777270314057,"model":"gpt-5.3-codex","cost":0.0249515},{"requestId":"(unknown)","startMs":1777270320596,"model":"gpt-5.3-codex","cost":0.029179499999999997},{"requestId":"(unknown)","startMs":1777270334994,"model":"gpt-5.3-codex","cost":0.07099575},{"requestId":"(unknown)","startMs":1777270339047,"model":"gpt-5.3-codex","cost":0.04559205},{"requestId":"(unknown)","startMs":1777270344654,"model":"gpt-5.3-codex","cost":0.0111293},{"requestId":"(unknown)","startMs":1777270348235,"model":"gpt-5.3-codex","cost":0.049911050000000005},{"requestId":"(unknown)","startMs":1777270411784,"model":"gpt-5.3-codex","cost":0.0123459},{"requestId":"(unknown)","startMs":1777270419642,"model":"gpt-5.3-codex","cost":0.0603113},{"requestId":"(unknown)","startMs":1777270428381,"model":"gpt-5.3-codex","cost":0.00976045},{"requestId":"(unknown)","startMs":1777270430835,"model":"gpt-5.3-codex","cost":0.07528815},{"requestId":"(unknown)","startMs":1777270460231,"model":"gpt-5.3-codex","cost":0.07514395},{"requestId":"(unknown)","startMs":1777270468745,"model":"gpt-5.3-codex","cost":0.0175553},{"requestId":"(unknown)","startMs":1777270477128,"model":"gpt-5.3-codex","cost":0.056128449999999996},{"requestId":"(unknown)","startMs":1777270485482,"model":"gpt-5.3-codex","cost":0.1024975},{"requestId":"(unknown)","startMs":1777270492545,"model":"gpt-5.3-codex","cost":0.10106599999999999},{"requestId":"(unknown)","startMs":1777270497026,"model":"gpt-5.3-codex","cost":0.0167265},{"requestId":"(unknown)","startMs":1777270502835,"model":"gpt-5.3-codex","cost":0.0449302},{"requestId":"(unknown)","startMs":1777270506507,"model":"gpt-5.3-codex","cost":0.020955550000000003},{"requestId":"(unknown)","startMs":1777270508902,"model":"gpt-5.3-codex","cost":0.08547104999999999},{"requestId":"(unknown)","startMs":1777270511466,"model":"gpt-5.3-codex","cost":0.056551599999999994},{"requestId":"(unknown)","startMs":1777270514696,"model":"gpt-5.3-codex","cost":0.0643643},{"requestId":"(unknown)","startMs":1777270529648,"model":"gpt-5.3-codex","cost":0.02366665},{"requestId":"(unknown)","startMs":1777270546151,"model":"gpt-5.3-codex","cost":0.033265050000000004},{"requestId":"(unknown)","startMs":1777270549501,"model":"gpt-5.3-codex","cost":0.12030375},{"requestId":"(unknown)","startMs":1777270554102,"model":"gpt-5.3-codex","cost":0.1214885},{"requestId":"(unknown)","startMs":1777270558408,"model":"gpt-5.3-codex","cost":0.037492},{"requestId":"(unknown)","startMs":1777270639039,"model":"gpt-5.3-codex","cost":0.08191785},{"requestId":"(unknown)","startMs":1777270658444,"model":"gpt-5.3-codex","cost":0.061279749999999994},{"requestId":"(unknown)","startMs":1777270665501,"model":"gpt-5.3-codex","cost":0.02867305},{"requestId":"(unknown)","startMs":1777270670103,"model":"gpt-5.3-codex","cost":0.13357225},{"requestId":"(unknown)","startMs":1777270683993,"model":"gpt-5.3-codex","cost":0.0225575},{"requestId":"(unknown)","startMs":1777270687026,"model":"gpt-5.3-codex","cost":0.023715299999999998},{"requestId":"(unknown)","startMs":1777271163070,"model":"gpt-5.3-codex","cost":0.02114245},{"requestId":"(unknown)","startMs":1777271166988,"model":"gpt-5.3-codex","cost":0.0380436},{"requestId":"(unknown)","startMs":1777271174823,"model":"gpt-5.3-codex","cost":0.024125849999999997},{"requestId":"(unknown)","startMs":1777271179974,"model":"gpt-5.3-codex","cost":0.03249085},{"requestId":"(unknown)","startMs":1777271307524,"model":"gpt-5.3-codex","cost":0.0295946},{"requestId":"(unknown)","startMs":1777271616561,"model":"gpt-5.3-codex","cost":0.02175915},{"requestId":"(unknown)","startMs":1777271626647,"model":"gpt-5.3-codex","cost":0.024030299999999997},{"requestId":"(unknown)","startMs":1777271633001,"model":"gpt-5.3-codex","cost":0.1397235},{"requestId":"(unknown)","startMs":1777271638136,"model":"gpt-5.3-codex","cost":0.0423549},{"requestId":"(unknown)","startMs":1777271645486,"model":"gpt-5.3-codex","cost":0.1479345},{"requestId":"(unknown)","startMs":1777271651007,"model":"gpt-5.3-codex","cost":0.025816699999999998},{"requestId":"(unknown)","startMs":1777271658350,"model":"gpt-5.3-codex","cost":0.07988715},{"requestId":"(unknown)","startMs":1777271666542,"model":"gpt-5.3-codex","cost":0.0262843},{"requestId":"(unknown)","startMs":1777271860314,"model":"gpt-5.3-codex","cost":0.07554854999999999},{"requestId":"(unknown)","startMs":1777271869761,"model":"gpt-5.3-codex","cost":0.0422303},{"requestId":"(unknown)","startMs":1777271880375,"model":"gpt-5.3-codex","cost":0.0569205},{"requestId":"(unknown)","startMs":1777271885235,"model":"gpt-5.3-codex","cost":0.0537775},{"requestId":"(unknown)","startMs":1777271893504,"model":"gpt-5.3-codex","cost":0.17987024999999998},{"requestId":"(unknown)","startMs":1777271900707,"model":"gpt-5.3-codex","cost":0.19344675},{"requestId":"(unknown)","startMs":1777271908242,"model":"gpt-5.3-codex","cost":0.20273925},{"requestId":"(unknown)","startMs":1777271925716,"model":"gpt-5.3-codex","cost":0.032468449999999996},{"requestId":"(unknown)","startMs":1777271927910,"model":"gpt-5.3-codex","cost":0.08773065000000001},{"requestId":"(unknown)","startMs":1777271932579,"model":"gpt-5.3-codex","cost":0.09123135},{"requestId":"(unknown)","startMs":1777271970625,"model":"gpt-5.3-codex","cost":0.07137235},{"requestId":"(unknown)","startMs":1777271981130,"model":"gpt-5.3-codex","cost":0.07047039999999999},{"requestId":"(unknown)","startMs":1777272000342,"model":"gpt-5.3-codex","cost":0.1222438},{"requestId":"(unknown)","startMs":1777272004514,"model":"gpt-5.3-codex","cost":0.1032066},{"requestId":"(unknown)","startMs":1777272019591,"model":"gpt-5.3-codex","cost":0.046637149999999995},{"requestId":"(unknown)","startMs":1777272026320,"model":"gpt-5.3-codex","cost":0.08799245},{"requestId":"(unknown)","startMs":1777272037133,"model":"gpt-5.3-codex","cost":0.07219415},{"requestId":"(unknown)","startMs":1777272045547,"model":"gpt-5.3-codex","cost":0.11537434999999999},{"requestId":"(unknown)","startMs":1777272051205,"model":"gpt-5.3-codex","cost":0.09551815},{"requestId":"(unknown)","startMs":1777272058336,"model":"gpt-5.3-codex","cost":0.08648919999999999},{"requestId":"(unknown)","startMs":1777272068663,"model":"gpt-5.3-codex","cost":0.11752265},{"requestId":"(unknown)","startMs":1777272074439,"model":"gpt-5.3-codex","cost":0.035318499999999996},{"requestId":"(unknown)","startMs":1777272081201,"model":"gpt-5.3-codex","cost":0.04500125},{"requestId":"(unknown)","startMs":1777272447160,"model":"gpt-5.3-codex","cost":0.23958025000000002},{"requestId":"(unknown)","startMs":1777272455948,"model":"gpt-5.3-codex","cost":0.03343445},{"requestId":"(unknown)","startMs":1777273083224,"model":"gpt-5.3-codex","cost":0.0407372},{"requestId":"(unknown)","startMs":1777273093600,"model":"gpt-5.3-codex","cost":0.11011839999999999},{"requestId":"(unknown)","startMs":1777273099914,"model":"gpt-5.3-codex","cost":0.03189445},{"requestId":"(unknown)","startMs":1777273105749,"model":"gpt-5.3-codex","cost":0.0388178},{"requestId":"(unknown)","startMs":1777273110681,"model":"gpt-5.3-codex","cost":0.031353},{"requestId":"(unknown)","startMs":1777273116647,"model":"gpt-5.3-codex","cost":0.07444324999999999},{"requestId":"(unknown)","startMs":1777273122509,"model":"gpt-5.3-codex","cost":0.0526666},{"requestId":"(unknown)","startMs":1777273127613,"model":"gpt-5.3-codex","cost":0.08215444999999999},{"requestId":"(unknown)","startMs":1777273137225,"model":"gpt-5.3-codex","cost":0.08129275},{"requestId":"(unknown)","startMs":1777273143331,"model":"gpt-5.3-codex","cost":0.0421043},{"requestId":"(unknown)","startMs":1777273150984,"model":"gpt-5.3-codex","cost":0.03460345},{"requestId":"(unknown)","startMs":1777273154680,"model":"gpt-5.3-codex","cost":0.15295735},{"requestId":"(unknown)","startMs":1777273169529,"model":"gpt-5.3-codex","cost":0.04285995},{"requestId":"(unknown)","startMs":1777273274557,"model":"gpt-5.3-codex","cost":0.05248845},{"requestId":"(unknown)","startMs":1777273285328,"model":"gpt-5.3-codex","cost":0.0379988},{"requestId":"(unknown)","startMs":1777273294531,"model":"gpt-5.3-codex","cost":0.045125849999999995},{"requestId":"(unknown)","startMs":1777273303288,"model":"gpt-5.3-codex","cost":0.035575749999999996},{"requestId":"(unknown)","startMs":1777273686819,"model":"gpt-5.3-codex","cost":0.2648205},{"requestId":"(unknown)","startMs":1777273696551,"model":"gpt-5.3-codex","cost":0.2631615},{"requestId":"(unknown)","startMs":1777273702567,"model":"gpt-5.3-codex","cost":0.262416},{"requestId":"(unknown)","startMs":1777273967259,"model":"gpt-5.3-codex","cost":0.26781649999999996},{"requestId":"(unknown)","startMs":1777274151980,"model":"gpt-5.3-codex","cost":0.26632724999999996},{"requestId":"(unknown)","startMs":1777274160124,"model":"gpt-5.3-codex","cost":0.263592},{"requestId":"(unknown)","startMs":1777274240714,"model":"gpt-5.3-codex","cost":0.028357349999999996},{"requestId":"(unknown)","startMs":1777274399454,"model":"gpt-5.3-codex","cost":0.26783575000000004},{"requestId":"(unknown)","startMs":1777274463770,"model":"gpt-5.3-codex","cost":0.27056749999999996},{"requestId":"(unknown)","startMs":1777274677227,"model":"gpt-5.3-codex","cost":0.03138555},{"requestId":"(unknown)","startMs":1777274682025,"model":"gpt-5.3-codex","cost":0.26703774999999996},{"requestId":"(unknown)","startMs":1777275020979,"model":"gpt-5.3-codex","cost":0.03522855},{"requestId":"(unknown)","startMs":1777275029770,"model":"gpt-5.3-codex","cost":0.2700495},{"requestId":"(unknown)","startMs":1777275066987,"model":"gpt-5.3-codex","cost":0.03466925},{"requestId":"(unknown)","startMs":1777275074596,"model":"gpt-5.3-codex","cost":0.02943465},{"requestId":"(unknown)","startMs":1777275080491,"model":"gpt-5.3-codex","cost":0.27115025},{"requestId":"(unknown)","startMs":1777275086131,"model":"gpt-5.3-codex","cost":0.270697},{"requestId":"(unknown)","startMs":1777275094314,"model":"gpt-5.3-codex","cost":0.0336896},{"requestId":"(unknown)","startMs":1777275159511,"model":"gpt-5.3-codex","cost":0.029970499999999997},{"requestId":"(unknown)","startMs":1777275164325,"model":"gpt-5.3-codex","cost":0.03226895},{"requestId":"(unknown)","startMs":1777275263677,"model":"gpt-5.3-codex","cost":0.041902699999999994},{"requestId":"(unknown)","startMs":1777275268614,"model":"gpt-5.3-codex","cost":0.27743100000000004},{"requestId":"(unknown)","startMs":1777275275054,"model":"gpt-5.3-codex","cost":0.035380449999999994},{"requestId":"(unknown)","startMs":1777275279673,"model":"gpt-5.3-codex","cost":0.03525515},{"requestId":"(unknown)","startMs":1777275466583,"model":"gpt-5.3-codex","cost":0.029810200000000002},{"requestId":"(unknown)","startMs":1777275556995,"model":"gpt-5.3-codex","cost":0.031974249999999996},{"requestId":"(unknown)","startMs":1777275563573,"model":"gpt-5.3-codex","cost":0.04158735},{"requestId":"(unknown)","startMs":1777275570458,"model":"gpt-5.3-codex","cost":0.049456049999999994},{"requestId":"(unknown)","startMs":1777275667986,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777275668267,"model":"gpt-5.3-codex","cost":0.2761661},{"requestId":"(unknown)","startMs":1777275713615,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777275713900,"model":"gpt-5.3-codex","cost":0.0472661},{"requestId":"(unknown)","startMs":1777275761113,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777275761367,"model":"gpt-5.3-codex","cost":0.30268},{"requestId":"(unknown)","startMs":1777275784259,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777275784522,"model":"gpt-5.3-codex","cost":0.0368431},{"requestId":"(unknown)","startMs":1777275897450,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777275897761,"model":"gpt-5.3-codex","cost":0.30817500000000003},{"requestId":"(unknown)","startMs":1777275916150,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777275916491,"model":"gpt-5.3-codex","cost":0.30787225},{"requestId":"(unknown)","startMs":1777275925948,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777275926285,"model":"gpt-5.3-codex","cost":0.037880849999999994},{"requestId":"(unknown)","startMs":1777276711799,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777276712335,"model":"gpt-5.3-codex","cost":0.05754979999999999},{"requestId":"(unknown)","startMs":1777276717397,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777276717672,"model":"gpt-5.3-codex","cost":0.30688350000000003},{"requestId":"(unknown)","startMs":1777276726929,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777276727212,"model":"gpt-5.3-codex","cost":0.0339045},{"requestId":"(unknown)","startMs":1777276732146,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777276732388,"model":"gpt-5.3-codex","cost":0.30789675},{"requestId":"(unknown)","startMs":1777276739591,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777276739859,"model":"gpt-5.3-codex","cost":0.0404404},{"requestId":"(unknown)","startMs":1777276747604,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777276747861,"model":"gpt-5.3-codex","cost":0.31428775},{"requestId":"(unknown)","startMs":1777276754981,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777276755241,"model":"gpt-5.3-codex","cost":0.06650595},{"requestId":"(unknown)","startMs":1777276759705,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777276759970,"model":"gpt-5.3-codex","cost":0.04342485},{"requestId":"(unknown)","startMs":1777276766450,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777276766718,"model":"gpt-5.3-codex","cost":0.04762065},{"requestId":"(unknown)","startMs":1777276771985,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777276772303,"model":"gpt-5.3-codex","cost":0.042013299999999996},{"requestId":"(unknown)","startMs":1777276784833,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777276785107,"model":"gpt-5.3-codex","cost":0.08782165},{"requestId":"(unknown)","startMs":1777276797738,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777276798058,"model":"gpt-5.3-codex","cost":0.08801064999999998},{"requestId":"(unknown)","startMs":1777276810988,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777276811371,"model":"gpt-5.3-codex","cost":0.05384155},{"requestId":"(unknown)","startMs":1777276818671,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777276818984,"model":"gpt-5.3-codex","cost":0.0379323},{"requestId":"(unknown)","startMs":1777276930172,"model":"gpt-5.3-codex","cost":0},{"requestId":"(unknown)","startMs":1777276930468,"model":"gpt-5.3-codex","cost":0.20852825},{"requestId":"(unknown)","startMs":1777276939490,"model":"gpt-5.3-codex","cost":0.2129085},{"requestId":"(unknown)","startMs":1777277553529,"model":"gpt-5.3-codex","cost":0.21342475},{"requestId":"(unknown)","startMs":1777277562400,"model":"gpt-5.3-codex","cost":0.2127405},{"requestId":"(unknown)","startMs":1777277567119,"model":"gpt-5.3-codex","cost":0.214564},{"requestId":"(unknown)","startMs":1777277572098,"model":"gpt-5.3-codex","cost":0.21894775},{"requestId":"(unknown)","startMs":1777277578600,"model":"gpt-5.3-codex","cost":0.036157449999999994},{"requestId":"(unknown)","startMs":1777277616053,"model":"gpt-5.3-codex","cost":0.0432873},{"requestId":"(unknown)","startMs":1777277621286,"model":"gpt-5.3-codex","cost":0.222467},{"requestId":"(unknown)","startMs":1777277626880,"model":"gpt-5.3-codex","cost":0.20347845},{"requestId":"(unknown)","startMs":1777277630986,"model":"gpt-5.3-codex","cost":0.22274525},{"requestId":"(unknown)","startMs":1777277635258,"model":"gpt-5.3-codex","cost":0.223223},{"requestId":"(unknown)","startMs":1777277641749,"model":"gpt-5.3-codex","cost":0.20585845},{"requestId":"(unknown)","startMs":1777277647005,"model":"gpt-5.3-codex","cost":0.028017499999999997},{"requestId":"(unknown)","startMs":1777277654253,"model":"gpt-5.3-codex","cost":0.2275875},{"requestId":"(unknown)","startMs":1777277660749,"model":"gpt-5.3-codex","cost":0.22766625000000001},{"requestId":"(unknown)","startMs":1777277665988,"model":"gpt-5.3-codex","cost":0.024884999999999997},{"requestId":"(unknown)","startMs":1777277672692,"model":"gpt-5.3-codex","cost":0.22833299999999998},{"requestId":"(unknown)","startMs":1777277676793,"model":"gpt-5.3-codex","cost":0.0387499},{"requestId":"(unknown)","startMs":1777277679911,"model":"gpt-5.3-codex","cost":0.025135249999999998},{"requestId":"(unknown)","startMs":1777277683483,"model":"gpt-5.3-codex","cost":0.0336007},{"requestId":"(unknown)","startMs":1777277694671,"model":"gpt-5.3-codex","cost":0.028878150000000002},{"requestId":"(unknown)","startMs":1777277699234,"model":"gpt-5.3-codex","cost":0.029780099999999997},{"requestId":"(unknown)","startMs":1777277706676,"model":"gpt-5.3-codex","cost":0.233842},{"requestId":"(unknown)","startMs":1777277713026,"model":"gpt-5.3-codex","cost":0.03021795},{"requestId":"(unknown)","startMs":1777278537528,"model":"gpt-5.3-codex","cost":0.015002749999999999},{"requestId":"(unknown)","startMs":1777278546210,"model":"gpt-5.3-codex","cost":0.003164},{"requestId":"(unknown)","startMs":1777278548989,"model":"gpt-5.3-codex","cost":0.02169825},{"requestId":"(unknown)","startMs":1777278554953,"model":"gpt-5.3-codex","cost":0.027221250000000002},{"requestId":"(unknown)","startMs":1777278561826,"model":"gpt-5.3-codex","cost":0.02879625},{"requestId":"(unknown)","startMs":1777278564442,"model":"gpt-5.3-codex","cost":0.031486},{"requestId":"(unknown)","startMs":1777278568120,"model":"gpt-5.3-codex","cost":0.036846250000000004},{"requestId":"(unknown)","startMs":1777278573901,"model":"gpt-5.3-codex","cost":0.035346499999999996},{"requestId":"(unknown)","startMs":1777278577921,"model":"gpt-5.3-codex","cost":0.03504725},{"requestId":"(unknown)","startMs":1777278580287,"model":"gpt-5.3-codex","cost":0.040675249999999996},{"requestId":"(unknown)","startMs":1777278586599,"model":"gpt-5.3-codex","cost":0.041769},{"requestId":"(unknown)","startMs":1777278591555,"model":"gpt-5.3-codex","cost":0.01573355},{"requestId":"(unknown)","startMs":1777278593767,"model":"gpt-5.3-codex","cost":0.046963},{"requestId":"(unknown)","startMs":1777278599330,"model":"gpt-5.3-codex","cost":0.051709},{"requestId":"(unknown)","startMs":1777278608007,"model":"gpt-5.3-codex","cost":0.019486950000000003},{"requestId":"(unknown)","startMs":1777278613038,"model":"gpt-5.3-codex","cost":0.05011475},{"requestId":"(unknown)","startMs":1777278616127,"model":"gpt-5.3-codex","cost":0.05035625}],"toolCounts":[{"tool":"Bash","count":125},{"tool":"Grep","count":53},{"tool":"Read","count":52},{"tool":"TodoWrite","count":22},{"tool":"terminal","count":20},{"tool":"Edit","count":8},{"tool":"Glob","count":8}],"toolSequence":[{"requestId":"req-a2d44a06","toolName":"TodoWrite","timestamp":1777270229307},{"requestId":"req-a2d44a06","toolName":"TodoWrite","timestamp":1777270231677},{"requestId":"req-a2d44a06","toolName":"Grep","timestamp":1777270238340},{"requestId":"req-a2d44a06","toolName":"Grep","timestamp":1777270238341},{"requestId":"req-a2d44a06","toolName":"Grep","timestamp":1777270238343},{"requestId":"req-a2d44a06","toolName":"Read","timestamp":1777270250015},{"requestId":"req-a2d44a06","toolName":"Read","timestamp":1777270251554},{"requestId":"req-a2d44a06","toolName":"Read","timestamp":1777270258105},{"requestId":"req-a2d44a06","toolName":"Grep","timestamp":1777270258106},{"requestId":"req-a2d44a06","toolName":"Read","timestamp":1777270264764},{"requestId":"req-a2d44a06","toolName":"Read","timestamp":1777270264766},{"requestId":"req-a2d44a06","toolName":"Read","timestamp":1777270264775},{"requestId":"req-a2d44a06","toolName":"Grep","timestamp":1777270264779},{"requestId":"req-a2d44a06","toolName":"Grep","timestamp":1777270264784},{"requestId":"req-a2d44a06","toolName":"Grep","timestamp":1777270271105},{"requestId":"req-a2d44a06","toolName":"Grep","timestamp":1777270271116},{"requestId":"req-a2d44a06","toolName":"Grep","timestamp":1777270272743},{"requestId":"req-a2d44a06","toolName":"Grep","timestamp":1777270274636},{"requestId":"req-a2d44a06","toolName":"Read","timestamp":1777270282675},{"requestId":"req-a2d44a06","toolName":"Read","timestamp":1777270282676},{"requestId":"req-a2d44a06","toolName":"Grep","timestamp":1777270282681},{"requestId":"req-a2d44a06","toolName":"Grep","timestamp":1777270286875},{"requestId":"req-a2d44a06","toolName":"Grep","timestamp":1777270295680},{"requestId":"req-a2d44a06","toolName":"Grep","timestamp":1777270306729},{"requestId":"req-a2d44a06","toolName":"Read","timestamp":1777270306730},{"requestId":"req-a2d44a06","toolName":"Grep","timestamp":1777270312065},{"requestId":"req-a2d44a06","toolName":"Read","timestamp":1777270320568},{"requestId":"req-a2d44a06","toolName":"Grep","timestamp":1777270320568},{"requestId":"req-a2d44a06","toolName":"Edit","timestamp":1777270329485},{"requestId":"req-a2d44a06","toolName":"TodoWrite","timestamp":1777270336541},{"requestId":"req-a2d44a06","toolName":"Read","timestamp":1777270343998},{"requestId":"req-a2d44a06","toolName":"Bash","timestamp":1777270344000},{"requestId":"req-a2d44a06","toolName":"TodoWrite","timestamp":1777270345680},{"requestId":"req-2d4c315a","toolName":"Read","timestamp":1777270419504},{"requestId":"req-2d4c315a","toolName":"Read","timestamp":1777270419522},{"requestId":"req-2d4c315a","toolName":"Bash","timestamp":1777270419545},{"requestId":"req-2d4c315a","toolName":"Bash","timestamp":1777270419550},{"requestId":"req-2d4c315a","toolName":"Grep","timestamp":1777270428086},{"requestId":"req-2d4c315a","toolName":"Grep","timestamp":1777270428087},{"requestId":"req-2d4c315a","toolName":"Grep","timestamp":1777270428112},{"requestId":"req-2d4c315a","toolName":"Read","timestamp":1777270429625},{"requestId":"req-2d4c315a","toolName":"Read","timestamp":1777270430375},{"requestId":"req-2d4c315a","toolName":"Bash","timestamp":1777270444590},{"requestId":"req-2d4c315a","toolName":"Bash","timestamp":1777270468170},{"requestId":"req-2d4c315a","toolName":"Bash","timestamp":1777270468189},{"requestId":"req-2d4c315a","toolName":"Read","timestamp":1777270476910},{"requestId":"req-2d4c315a","toolName":"Bash","timestamp":1777270476920},{"requestId":"req-2d4c315a","toolName":"Grep","timestamp":1777270482471},{"requestId":"req-2d4c315a","toolName":"Glob","timestamp":1777270491485},{"requestId":"req-2d4c315a","toolName":"Glob","timestamp":1777270491486},{"requestId":"req-2d4c315a","toolName":"Read","timestamp":1777270496292},{"requestId":"req-2d4c315a","toolName":"Grep","timestamp":1777270498628},{"requestId":"req-2d4c315a","toolName":"Grep","timestamp":1777270504582},{"requestId":"req-2d4c315a","toolName":"Read","timestamp":1777270508023},{"requestId":"req-2d4c315a","toolName":"Read","timestamp":1777270510523},{"requestId":"req-2d4c315a","toolName":"Bash","timestamp":1777270513083},{"requestId":"req-2d4c315a","toolName":"Bash","timestamp":1777270520050},{"requestId":"req-2d4c315a","toolName":"Bash","timestamp":1777270530736},{"requestId":"req-2d4c315a","toolName":"Read","timestamp":1777270547356},{"requestId":"req-2d4c315a","toolName":"Bash","timestamp":1777270551836},{"requestId":"req-2d4c315a","toolName":"TodoWrite","timestamp":1777270556044},{"requestId":"req-f96dbd81","toolName":"Grep","timestamp":1777270665437},{"requestId":"req-f96dbd81","toolName":"Grep","timestamp":1777270665443},{"requestId":"req-f96dbd81","toolName":"Read","timestamp":1777270665447},{"requestId":"req-f96dbd81","toolName":"Read","timestamp":1777270665449},{"requestId":"req-f96dbd81","toolName":"Grep","timestamp":1777270668215},{"requestId":"req-f96dbd81","toolName":"Grep","timestamp":1777270669801},{"requestId":"req-f96dbd81","toolName":"Edit","timestamp":1777270683903},{"requestId":"req-f96dbd81","toolName":"Edit","timestamp":1777270683904},{"requestId":"req-f96dbd81","toolName":"Bash","timestamp":1777270685327},{"requestId":"req-f96dbd81","toolName":"Bash","timestamp":1777270686244},{"requestId":"req-bf59d7d4","toolName":"TodoWrite","timestamp":1777271165475},{"requestId":"req-bf59d7d4","toolName":"TodoWrite","timestamp":1777271166750},{"requestId":"req-bf59d7d4","toolName":"Read","timestamp":1777271174805},{"requestId":"req-bf59d7d4","toolName":"Read","timestamp":1777271174807},{"requestId":"req-bf59d7d4","toolName":"Read","timestamp":1777271174810},{"requestId":"req-bf59d7d4","toolName":"Grep","timestamp":1777271174811},{"requestId":"req-bf59d7d4","toolName":"Grep","timestamp":1777271174814},{"requestId":"req-bf59d7d4","toolName":"TodoWrite","timestamp":1777271178486},{"requestId":"req-05e119c7","toolName":"Bash","timestamp":1777271626495},{"requestId":"req-05e119c7","toolName":"Bash","timestamp":1777271626510},{"requestId":"req-05e119c7","toolName":"Bash","timestamp":1777271626521},{"requestId":"req-05e119c7","toolName":"Bash","timestamp":1777271626525},{"requestId":"req-05e119c7","toolName":"Bash","timestamp":1777271632842},{"requestId":"req-05e119c7","toolName":"Bash","timestamp":1777271632843},{"requestId":"req-05e119c7","toolName":"Bash","timestamp":1777271632846},{"requestId":"req-05e119c7","toolName":"Bash","timestamp":1777271632851},{"requestId":"req-05e119c7","toolName":"Bash","timestamp":1777271636528},{"requestId":"req-05e119c7","toolName":"Bash","timestamp":1777271645435},{"requestId":"req-05e119c7","toolName":"Bash","timestamp":1777271645435},{"requestId":"req-05e119c7","toolName":"Bash","timestamp":1777271650962},{"requestId":"req-05e119c7","toolName":"Bash","timestamp":1777271650962},{"requestId":"req-05e119c7","toolName":"Bash","timestamp":1777271658070},{"requestId":"req-05e119c7","toolName":"Bash","timestamp":1777271658206},{"requestId":"req-05e119c7","toolName":"Read","timestamp":1777271665586},{"requestId":"req-d61c6a4d","toolName":"TodoWrite","timestamp":1777271866719},{"requestId":"req-d61c6a4d","toolName":"TodoWrite","timestamp":1777271869450},{"requestId":"req-d61c6a4d","toolName":"Grep","timestamp":1777271875221},{"requestId":"req-d61c6a4d","toolName":"Grep","timestamp":1777271875222},{"requestId":"req-d61c6a4d","toolName":"Grep","timestamp":1777271875226},{"requestId":"req-d61c6a4d","toolName":"Grep","timestamp":1777271875229},{"requestId":"req-d61c6a4d","toolName":"Read","timestamp":1777271885151},{"requestId":"req-d61c6a4d","toolName":"Read","timestamp":1777271885156},{"requestId":"req-d61c6a4d","toolName":"Read","timestamp":1777271893417},{"requestId":"req-d61c6a4d","toolName":"Read","timestamp":1777271893438},{"requestId":"req-d61c6a4d","toolName":"Grep","timestamp":1777271893446},{"requestId":"req-d61c6a4d","toolName":"Grep","timestamp":1777271893447},{"requestId":"req-d61c6a4d","toolName":"Read","timestamp":1777271898670},{"requestId":"req-d61c6a4d","toolName":"Read","timestamp":1777271898672},{"requestId":"req-d61c6a4d","toolName":"Read","timestamp":1777271898714},{"requestId":"req-d61c6a4d","toolName":"Bash","timestamp":1777271908199},{"requestId":"req-d61c6a4d","toolName":"Bash","timestamp":1777271908200},{"requestId":"req-d61c6a4d","toolName":"Edit","timestamp":1777271923144},{"requestId":"req-d61c6a4d","toolName":"Read","timestamp":1777271927047},{"requestId":"req-d61c6a4d","toolName":"Edit","timestamp":1777271930004},{"requestId":"req-d61c6a4d","toolName":"Bash","timestamp":1777271941889},{"requestId":"req-d61c6a4d","toolName":"Bash","timestamp":1777271941891},{"requestId":"req-d61c6a4d","toolName":"Grep","timestamp":1777271981112},{"requestId":"req-d61c6a4d","toolName":"Read","timestamp":1777271981113},{"requestId":"req-d61c6a4d","toolName":"Read","timestamp":1777272000251},{"requestId":"req-d61c6a4d","toolName":"Bash","timestamp":1777272000251},{"requestId":"req-d61c6a4d","toolName":"Bash","timestamp":1777272002711},{"requestId":"req-d61c6a4d","toolName":"Bash","timestamp":1777272017046},{"requestId":"req-d61c6a4d","toolName":"Bash","timestamp":1777272017065},{"requestId":"req-d61c6a4d","toolName":"Bash","timestamp":1777272026103},{"requestId":"req-d61c6a4d","toolName":"Bash","timestamp":1777272026204},{"requestId":"req-d61c6a4d","toolName":"Edit","timestamp":1777272035893},{"requestId":"req-d61c6a4d","toolName":"Read","timestamp":1777272044389},{"requestId":"req-d61c6a4d","toolName":"Edit","timestamp":1777272047764},{"requestId":"req-d61c6a4d","toolName":"Read","timestamp":1777272057285},{"requestId":"req-d61c6a4d","toolName":"Edit","timestamp":1777272060772},{"requestId":"req-d61c6a4d","toolName":"Bash","timestamp":1777272073779},{"requestId":"req-d61c6a4d","toolName":"Bash","timestamp":1777272073780},{"requestId":"req-d61c6a4d","toolName":"TodoWrite","timestamp":1777272078179},{"requestId":"req-37a42ca0","toolName":"Grep","timestamp":1777272454074},{"requestId":"req-37a42ca0","toolName":"Grep","timestamp":1777272455588},{"requestId":"req-3615e94b","toolName":"Bash","timestamp":1777273093422},{"requestId":"req-3615e94b","toolName":"Bash","timestamp":1777273093449},{"requestId":"req-3615e94b","toolName":"Bash","timestamp":1777273093471},{"requestId":"req-3615e94b","toolName":"Bash","timestamp":1777273093476},{"requestId":"req-3615e94b","toolName":"Bash","timestamp":1777273099813},{"requestId":"req-3615e94b","toolName":"Bash","timestamp":1777273099814},{"requestId":"req-3615e94b","toolName":"Bash","timestamp":1777273099817},{"requestId":"req-3615e94b","toolName":"Bash","timestamp":1777273099822},{"requestId":"req-3615e94b","toolName":"Bash","timestamp":1777273105640},{"requestId":"req-3615e94b","toolName":"Bash","timestamp":1777273105642},{"requestId":"req-3615e94b","toolName":"Bash","timestamp":1777273109342},{"requestId":"req-3615e94b","toolName":"Bash","timestamp":1777273116367},{"requestId":"req-3615e94b","toolName":"Bash","timestamp":1777273116402},{"requestId":"req-3615e94b","toolName":"Bash","timestamp":1777273122379},{"requestId":"req-3615e94b","toolName":"Bash","timestamp":1777273122399},{"requestId":"req-3615e94b","toolName":"Bash","timestamp":1777273127559},{"requestId":"req-3615e94b","toolName":"Bash","timestamp":1777273127561},{"requestId":"req-3615e94b","toolName":"Bash","timestamp":1777273135581},{"requestId":"req-3615e94b","toolName":"Bash","timestamp":1777273139442},{"requestId":"req-3615e94b","toolName":"Bash","timestamp":1777273150903},{"requestId":"req-3615e94b","toolName":"Bash","timestamp":1777273150904},{"requestId":"req-3615e94b","toolName":"Bash","timestamp":1777273153058},{"requestId":"req-3615e94b","toolName":"Bash","timestamp":1777273169424},{"requestId":"req-3615e94b","toolName":"Bash","timestamp":1777273169462},{"requestId":"req-3615e94b","toolName":"Bash","timestamp":1777273171877},{"requestId":"req-3615e94b","toolName":"Glob","timestamp":1777273283202},{"requestId":"req-3615e94b","toolName":"Glob","timestamp":1777273283203},{"requestId":"req-3615e94b","toolName":"Bash","timestamp":1777273294380},{"requestId":"req-3615e94b","toolName":"Bash","timestamp":1777273294414},{"requestId":"req-3615e94b","toolName":"TodoWrite","timestamp":1777273302081},{"requestId":"req-464c119f","toolName":"Glob","timestamp":1777273695064},{"requestId":"req-464c119f","toolName":"Glob","timestamp":1777273695193},{"requestId":"req-464c119f","toolName":"Bash","timestamp":1777273702430},{"requestId":"req-464c119f","toolName":"Bash","timestamp":1777273702459},{"requestId":"req-464c119f","toolName":"Bash","timestamp":1777273702468},{"requestId":"req-e4838b71","toolName":"Read","timestamp":1777274158621},{"requestId":"req-e4838b71","toolName":"Read","timestamp":1777274160013},{"requestId":"req-f2b25005","toolName":"Read","timestamp":1777274680570},{"requestId":"req-f2b25005","toolName":"Read","timestamp":1777274681540},{"requestId":"req-4ab28288","toolName":"Bash","timestamp":1777275029638},{"requestId":"req-4ab28288","toolName":"Bash","timestamp":1777275029654},{"requestId":"req-4ab28288","toolName":"Bash","timestamp":1777275029677},{"requestId":"req-4ab28288","toolName":"Bash","timestamp":1777275029681},{"requestId":"req-2d31fa96","toolName":"Bash","timestamp":1777275074506},{"requestId":"req-2d31fa96","toolName":"Bash","timestamp":1777275074507},{"requestId":"req-2d31fa96","toolName":"Bash","timestamp":1777275074510},{"requestId":"req-2d31fa96","toolName":"Bash","timestamp":1777275074516},{"requestId":"req-2d31fa96","toolName":"Glob","timestamp":1777275077646},{"requestId":"req-2d31fa96","toolName":"Glob","timestamp":1777275078001},{"requestId":"req-2d31fa96","toolName":"Bash","timestamp":1777275086079},{"requestId":"req-2d31fa96","toolName":"Bash","timestamp":1777275086080},{"requestId":"req-2d31fa96","toolName":"Bash","timestamp":1777275086084},{"requestId":"req-2d31fa96","toolName":"Bash","timestamp":1777275093036},{"requestId":"req-a515d1fc","toolName":"TodoWrite","timestamp":1777275162814},{"requestId":"req-a515d1fc","toolName":"TodoWrite","timestamp":1777275163903},{"requestId":"req-a515d1fc","toolName":"Bash","timestamp":1777275166308},{"requestId":"req-a515d1fc","toolName":"Bash","timestamp":1777275268554},{"requestId":"req-a515d1fc","toolName":"Bash","timestamp":1777275268555},{"requestId":"req-a515d1fc","toolName":"Bash","timestamp":1777275268559},{"requestId":"req-a515d1fc","toolName":"Bash","timestamp":1777275273061},{"requestId":"req-a515d1fc","toolName":"TodoWrite","timestamp":1777275278176},{"requestId":"req-8bf85487","toolName":"Grep","timestamp":1777275563456},{"requestId":"req-8bf85487","toolName":"Grep","timestamp":1777275563458},{"requestId":"req-8bf85487","toolName":"Grep","timestamp":1777275563492},{"requestId":"req-8bf85487","toolName":"Grep","timestamp":1777275563495},{"requestId":"req-8bf85487","toolName":"Read","timestamp":1777275570312},{"requestId":"req-8bf85487","toolName":"Read","timestamp":1777275570354},{"requestId":"req-8bf85487","toolName":"Read","timestamp":1777275570379},{"requestId":"req-8bf85487","toolName":"Read","timestamp":1777275570384},{"requestId":"req-02fdb201","toolName":"Grep","timestamp":1777275772079},{"requestId":"req-02fdb201","toolName":"Grep","timestamp":1777275916059},{"requestId":"req-02fdb201","toolName":"Grep","timestamp":1777275916086},{"requestId":"req-02fdb201","toolName":"Grep","timestamp":1777275916087},{"requestId":"req-02fdb201","toolName":"Grep","timestamp":1777275916103},{"requestId":"req-02fdb201","toolName":"Grep","timestamp":1777275916108},{"requestId":"req-02fdb201","toolName":"Bash","timestamp":1777275916129},{"requestId":"req-02fdb201","toolName":"Bash","timestamp":1777275916138},{"requestId":"req-02fdb201","toolName":"Bash","timestamp":1777275916142},{"requestId":"req-02fdb201","toolName":"TodoWrite","timestamp":1777275924174},{"requestId":"req-0efac133","toolName":"TodoWrite","timestamp":1777276715293},{"requestId":"req-0efac133","toolName":"TodoWrite","timestamp":1777276716931},{"requestId":"req-0efac133","toolName":"Bash","timestamp":1777276726871},{"requestId":"req-0efac133","toolName":"Bash","timestamp":1777276726873},{"requestId":"req-0efac133","toolName":"Bash","timestamp":1777276726877},{"requestId":"req-0efac133","toolName":"Bash","timestamp":1777276732089},{"requestId":"req-0efac133","toolName":"Bash","timestamp":1777276732090},{"requestId":"req-0efac133","toolName":"Bash","timestamp":1777276732093},{"requestId":"req-0efac133","toolName":"Bash","timestamp":1777276738936},{"requestId":"req-0efac133","toolName":"Bash","timestamp":1777276739035},{"requestId":"req-0efac133","toolName":"Bash","timestamp":1777276747559},{"requestId":"req-0efac133","toolName":"Bash","timestamp":1777276747559},{"requestId":"req-0efac133","toolName":"Bash","timestamp":1777276754717},{"requestId":"req-0efac133","toolName":"Bash","timestamp":1777276754718},{"requestId":"req-0efac133","toolName":"Bash","timestamp":1777276757792},{"requestId":"req-0efac133","toolName":"Bash","timestamp":1777276766395},{"requestId":"req-0efac133","toolName":"Bash","timestamp":1777276766397},{"requestId":"req-0efac133","toolName":"Bash","timestamp":1777276770567},{"requestId":"req-0efac133","toolName":"Bash","timestamp":1777276784342},{"requestId":"req-0efac133","toolName":"Bash","timestamp":1777276784366},{"requestId":"req-0efac133","toolName":"Bash","timestamp":1777276791690},{"requestId":"req-0efac133","toolName":"Bash","timestamp":1777276809387},{"requestId":"req-0efac133","toolName":"TodoWrite","timestamp":1777276816573},{"requestId":"req-b1e5d62b","toolName":"Bash","timestamp":1777276938842},{"requestId":"req-b1e5d62b","toolName":"Bash","timestamp":1777276938844},{"requestId":"req-b1e5d62b","toolName":"Bash","timestamp":1777276938848},{"requestId":"req-b1e5d62b","toolName":"Bash","timestamp":1777276938853},{"requestId":"req-b8d812bc","toolName":"Grep","timestamp":1777277560422},{"requestId":"req-b8d812bc","toolName":"Grep","timestamp":1777277561904},{"requestId":"req-b8d812bc","toolName":"Read","timestamp":1777277566154},{"requestId":"req-b8d812bc","toolName":"Read","timestamp":1777277566624},{"requestId":"req-b8d812bc","toolName":"Read","timestamp":1777277571122},{"requestId":"req-b8d812bc","toolName":"Read","timestamp":1777277571592},{"requestId":"req-b8d812bc","toolName":"Grep","timestamp":1777277576223},{"requestId":"req-be06dff9","toolName":"TodoWrite","timestamp":1777277619105},{"requestId":"req-be06dff9","toolName":"TodoWrite","timestamp":1777277620792},{"requestId":"req-be06dff9","toolName":"Bash","timestamp":1777277625042},{"requestId":"req-be06dff9","toolName":"Bash","timestamp":1777277629966},{"requestId":"req-be06dff9","toolName":"Bash","timestamp":1777277630553},{"requestId":"req-be06dff9","toolName":"Bash","timestamp":1777277634097},{"requestId":"req-be06dff9","toolName":"Grep","timestamp":1777277640204},{"requestId":"req-be06dff9","toolName":"Read","timestamp":1777277645869},{"requestId":"req-be06dff9","toolName":"Grep","timestamp":1777277651898},{"requestId":"req-be06dff9","toolName":"Bash","timestamp":1777277659653},{"requestId":"req-be06dff9","toolName":"Bash","timestamp":1777277664885}],"loops":{"highFrequency":[{"requestId":"req-3615e94b","toolName":"Bash","count":27},{"requestId":"req-0efac133","toolName":"Bash","count":20},{"requestId":"req-1f066881","toolName":"terminal","count":20},{"requestId":"req-a2d44a06","toolName":"Grep","count":16},{"requestId":"req-05e119c7","toolName":"Bash","count":15},{"requestId":"req-d61c6a4d","toolName":"Read","count":12},{"requestId":"req-d61c6a4d","toolName":"Bash","count":12},{"requestId":"req-a2d44a06","toolName":"Read","count":11}],"consecutive":[{"requestId":"req-3615e94b","toolName":"Bash","count":25,"startTs":1777273093422,"endTs":1777273171877},{"requestId":"req-0efac133","toolName":"Bash","count":20,"startTs":1777276726871,"endTs":1777276809387},{"requestId":"req-1f066881","toolName":"terminal","count":20,"startTs":1777278545504,"endTs":1777278638558},{"requestId":"req-05e119c7","toolName":"Bash","count":15,"startTs":1777271626495,"endTs":1777271658206},{"requestId":"req-a2d44a06","toolName":"Grep","count":6,"startTs":1777270264779,"endTs":1777270274636},{"requestId":"req-d61c6a4d","toolName":"Bash","count":6,"startTs":1777272000251,"endTs":1777272026204},{"requestId":"req-02fdb201","toolName":"Grep","count":6,"startTs":1777275772079,"endTs":1777275916108},{"requestId":"req-a515d1fc","toolName":"Bash","count":5,"startTs":1777275166308,"endTs":1777275273061}]}},{"sessionId":"97293336-8043-49cb-ba64-edcf6bf95364","handle":"97293336...6bf95364","isActive":false,"agentId":"default","agentVersion":"","engine":"","totalCost":0.136425,"llmCalls":5,"requestCount":1,"totalTokens":88488,"avgLatencyMs":4656,"totalLatencyMs":23280,"startedMs":1777251323035,"latestMs":1777251348702,"modelBreakdown":[{"model":"gpt-5.3-codex","cost":0.136425,"calls":5,"tokens":88488}],"llmSequence":[{"requestId":"(unknown)","startMs":1777251323035,"model":"gpt-5.3-codex","cost":0.03203025},{"requestId":"(unknown)","startMs":1777251334601,"model":"gpt-5.3-codex","cost":0.031557749999999996},{"requestId":"(unknown)","startMs":1777251337812,"model":"gpt-5.3-codex","cost":0.031137750000000002},{"requestId":"(unknown)","startMs":1777251340285,"model":"gpt-5.3-codex","cost":0.036277500000000004},{"requestId":"(unknown)","startMs":1777251348702,"model":"gpt-5.3-codex","cost":0.0054222}],"toolCounts":[{"tool":"Read","count":3},{"tool":"Grep","count":2},{"tool":"Edit","count":1}],"toolSequence":[{"requestId":"req-bb17cd11","toolName":"Grep","timestamp":1777251327651},{"requestId":"req-bb17cd11","toolName":"Grep","timestamp":1777251328884},{"requestId":"req-bb17cd11","toolName":"Read","timestamp":1777251336854},{"requestId":"req-bb17cd11","toolName":"Read","timestamp":1777251337635},{"requestId":"req-bb17cd11","toolName":"Read","timestamp":1777251339343},{"requestId":"req-bb17cd11","toolName":"Edit","timestamp":1777251344768}],"loops":{"highFrequency":[],"consecutive":[]}},{"sessionId":"headless-1777237836297","handle":"headless...37836297","isActive":false,"agentId":"default","agentVersion":"","engine":"","totalCost":0.014797,"llmCalls":1,"requestCount":1,"totalTokens":22327,"avgLatencyMs":2330,"totalLatencyMs":2330,"startedMs":1777237837014,"latestMs":1777237837014,"modelBreakdown":[{"model":"gpt-5.3-codex","cost":0.014797,"calls":1,"tokens":22327}],"llmSequence":[{"requestId":"(unknown)","startMs":1777237837014,"model":"gpt-5.3-codex","cost":0.0147966}],"toolCounts":[],"toolSequence":[],"loops":{"highFrequency":[],"consecutive":[]}},{"sessionId":"headless-1777237832635","handle":"headless...37832635","isActive":false,"agentId":"default","agentVersion":"","engine":"","totalCost":0.039167,"llmCalls":1,"requestCount":1,"totalTokens":22066,"avgLatencyMs":1867,"totalLatencyMs":1867,"startedMs":1777237833349,"latestMs":1777237833349,"modelBreakdown":[{"model":"gpt-5.3-codex","cost":0.039167,"calls":1,"tokens":22066}],"llmSequence":[{"requestId":"(unknown)","startMs":1777237833349,"model":"gpt-5.3-codex","cost":0.03916675}],"toolCounts":[],"toolSequence":[],"loops":{"highFrequency":[],"consecutive":[]}},{"sessionId":"headless-1777237828809","handle":"headless...37828809","isActive":false,"agentId":"default","agentVersion":"","engine":"","totalCost":0.039128,"llmCalls":1,"requestCount":1,"totalTokens":22051,"avgLatencyMs":2064,"totalLatencyMs":2064,"startedMs":1777237829490,"latestMs":1777237829490,"modelBreakdown":[{"model":"gpt-5.3-codex","cost":0.039128,"calls":1,"tokens":22051}],"llmSequence":[{"requestId":"(unknown)","startMs":1777237829490,"model":"gpt-5.3-codex","cost":0.039128249999999996}],"toolCounts":[],"toolSequence":[],"loops":{"highFrequency":[],"consecutive":[]}},{"sessionId":"headless-1777237823697","handle":"headless...37823697","isActive":false,"agentId":"default","agentVersion":"","engine":"","totalCost":0.014116,"llmCalls":1,"requestCount":1,"totalTokens":22050,"avgLatencyMs":1786,"totalLatencyMs":1786,"startedMs":1777237824369,"latestMs":1777237824369,"modelBreakdown":[{"model":"gpt-5.3-codex","cost":0.014116,"calls":1,"tokens":22050}],"llmSequence":[{"requestId":"(unknown)","startMs":1777237824369,"model":"gpt-5.3-codex","cost":0.01411585}],"toolCounts":[],"toolSequence":[],"loops":{"highFrequency":[],"consecutive":[]}},{"sessionId":"headless-1777237819932","handle":"headless...37819932","isActive":false,"agentId":"default","agentVersion":"","engine":"","totalCost":0.038988,"llmCalls":1,"requestCount":1,"totalTokens":22041,"avgLatencyMs":1996,"totalLatencyMs":1996,"startedMs":1777237820618,"latestMs":1777237820618,"modelBreakdown":[{"model":"gpt-5.3-codex","cost":0.038988,"calls":1,"tokens":22041}],"llmSequence":[{"requestId":"(unknown)","startMs":1777237820618,"model":"gpt-5.3-codex","cost":0.038988249999999995}],"toolCounts":[],"toolSequence":[],"loops":{"highFrequency":[],"consecutive":[]}},{"sessionId":"headless-1777237701406","handle":"headless...37701406","isActive":false,"agentId":"default","agentVersion":"","engine":"","totalCost":0.040961,"llmCalls":1,"requestCount":1,"totalTokens":23098,"avgLatencyMs":2016,"totalLatencyMs":2016,"startedMs":1777237702098,"latestMs":1777237702098,"modelBreakdown":[{"model":"gpt-5.3-codex","cost":0.040961,"calls":1,"tokens":23098}],"llmSequence":[{"requestId":"(unknown)","startMs":1777237702098,"model":"gpt-5.3-codex","cost":0.0409605}],"toolCounts":[],"toolSequence":[],"loops":{"highFrequency":[],"consecutive":[]}},{"sessionId":"headless-1777237697193","handle":"headless...37697193","isActive":false,"agentId":"default","agentVersion":"","engine":"","totalCost":0.040311,"llmCalls":1,"requestCount":1,"totalTokens":22839,"avgLatencyMs":2428,"totalLatencyMs":2428,"startedMs":1777237697877,"latestMs":1777237697877,"modelBreakdown":[{"model":"gpt-5.3-codex","cost":0.040311,"calls":1,"tokens":22839}],"llmSequence":[{"requestId":"(unknown)","startMs":1777237697877,"model":"gpt-5.3-codex","cost":0.04031124999999999}],"toolCounts":[],"toolSequence":[],"loops":{"highFrequency":[],"consecutive":[]}},{"sessionId":"headless-1777237693344","handle":"headless...37693344","isActive":false,"agentId":"default","agentVersion":"","engine":"","totalCost":0.04042,"llmCalls":1,"requestCount":1,"totalTokens":22831,"avgLatencyMs":2078,"totalLatencyMs":2078,"startedMs":1777237694033,"latestMs":1777237694033,"modelBreakdown":[{"model":"gpt-5.3-codex","cost":0.04042,"calls":1,"tokens":22831}],"llmSequence":[{"requestId":"(unknown)","startMs":1777237694033,"model":"gpt-5.3-codex","cost":0.04041975}],"toolCounts":[],"toolSequence":[],"loops":{"highFrequency":[],"consecutive":[]}},{"sessionId":"headless-1777237689412","handle":"headless...37689412","isActive":false,"agentId":"default","agentVersion":"","engine":"","totalCost":0.040448,"llmCalls":1,"requestCount":1,"totalTokens":22833,"avgLatencyMs":2153,"totalLatencyMs":2153,"startedMs":1777237690120,"latestMs":1777237690120,"modelBreakdown":[{"model":"gpt-5.3-codex","cost":0.040448,"calls":1,"tokens":22833}],"llmSequence":[{"requestId":"(unknown)","startMs":1777237690120,"model":"gpt-5.3-codex","cost":0.04044775}],"toolCounts":[],"toolSequence":[],"loops":{"highFrequency":[],"consecutive":[]}},{"sessionId":"headless-1777237684268","handle":"headless...37684268","isActive":false,"agentId":"default","agentVersion":"","engine":"","totalCost":0.040644,"llmCalls":1,"requestCount":1,"totalTokens":22847,"avgLatencyMs":2744,"totalLatencyMs":2744,"startedMs":1777237685586,"latestMs":1777237685586,"modelBreakdown":[{"model":"gpt-5.3-codex","cost":0.040644,"calls":1,"tokens":22847}],"llmSequence":[{"requestId":"(unknown)","startMs":1777237685586,"model":"gpt-5.3-codex","cost":0.04064375}],"toolCounts":[],"toolSequence":[],"loops":{"highFrequency":[],"consecutive":[]}},{"sessionId":"c669eadb-3193-4aad-93c0-8fbd1375866d","handle":"c669eadb...1375866d","isActive":false,"agentId":"default","agentVersion":"","engine":"","totalCost":0.057967,"llmCalls":2,"requestCount":1,"totalTokens":32858,"avgLatencyMs":2266,"totalLatencyMs":4533,"startedMs":1777222731483,"latestMs":1777237201167,"modelBreakdown":[{"model":"gpt-5.3-codex","cost":0.057967,"calls":2,"tokens":32858}],"llmSequence":[{"requestId":"(unknown)","startMs":1777222731483,"model":"gpt-5.3-codex","cost":0.02902025},{"requestId":"(unknown)","startMs":1777237201167,"model":"gpt-5.3-codex","cost":0.02894675}],"toolCounts":[],"toolSequence":[],"loops":{"highFrequency":[],"consecutive":[]}},{"sessionId":"2c938bd5-f118-4789-9ac0-87087a289f21","handle":"2c938bd5...7a289f21","isActive":false,"agentId":"default","agentVersion":"","engine":"","totalCost":0.355435,"llmCalls":13,"requestCount":1,"totalTokens":271397,"avgLatencyMs":5366,"totalLatencyMs":69764,"startedMs":1777191085489,"latestMs":1777191734027,"modelBreakdown":[{"model":"gpt-5.3-codex","cost":0.355435,"calls":13,"tokens":271397}],"llmSequence":[{"requestId":"(unknown)","startMs":1777191085489,"model":"gpt-5.3-codex","cost":0.03040275},{"requestId":"(unknown)","startMs":1777191088953,"model":"gpt-5.3-codex","cost":0.029942499999999997},{"requestId":"(unknown)","startMs":1777191092924,"model":"gpt-5.3-codex","cost":0.03222275},{"requestId":"(unknown)","startMs":1777191096980,"model":"gpt-5.3-codex","cost":0.03122},{"requestId":"(unknown)","startMs":1777191099014,"model":"gpt-5.3-codex","cost":0.01646645},{"requestId":"(unknown)","startMs":1777191317448,"model":"gpt-5.3-codex","cost":0.01335985},{"requestId":"(unknown)","startMs":1777191376847,"model":"gpt-5.3-codex","cost":0.04227475},{"requestId":"(unknown)","startMs":1777191508881,"model":"gpt-5.3-codex","cost":0.04173399999999999},{"requestId":"(unknown)","startMs":1777191517889,"model":"gpt-5.3-codex","cost":0.038086999999999996},{"requestId":"(unknown)","startMs":1777191519996,"model":"gpt-5.3-codex","cost":0.0108199},{"requestId":"(unknown)","startMs":1777191724618,"model":"gpt-5.3-codex","cost":0.044371249999999994},{"requestId":"(unknown)","startMs":1777191730863,"model":"gpt-5.3-codex","cost":0.0124544},{"requestId":"(unknown)","startMs":1777191734027,"model":"gpt-5.3-codex","cost":0.0120792}],"toolCounts":[{"tool":"Read","count":11},{"tool":"Grep","count":9}],"toolSequence":[{"requestId":"req-52bb693f","toolName":"Read","timestamp":1777191087935},{"requestId":"req-52bb693f","toolName":"Read","timestamp":1777191088754},{"requestId":"req-52bb693f","toolName":"Read","timestamp":1777191091730},{"requestId":"req-52bb693f","toolName":"Read","timestamp":1777191092238},{"requestId":"req-52bb693f","toolName":"Grep","timestamp":1777191095007},{"requestId":"req-52bb693f","toolName":"Read","timestamp":1777191098076},{"requestId":"req-52bb693f","toolName":"Read","timestamp":1777191098862},{"requestId":"req-75503240","toolName":"Grep","timestamp":1777191517723},{"requestId":"req-75503240","toolName":"Grep","timestamp":1777191517724},{"requestId":"req-75503240","toolName":"Grep","timestamp":1777191517743},{"requestId":"req-75503240","toolName":"Grep","timestamp":1777191517752},{"requestId":"req-75503240","toolName":"Read","timestamp":1777191519155},{"requestId":"req-75503240","toolName":"Read","timestamp":1777191519790},{"requestId":"req-ec338aed","toolName":"Grep","timestamp":1777191730714},{"requestId":"req-ec338aed","toolName":"Grep","timestamp":1777191730715},{"requestId":"req-ec338aed","toolName":"Grep","timestamp":1777191730721},{"requestId":"req-ec338aed","toolName":"Grep","timestamp":1777191730734},{"requestId":"req-ec338aed","toolName":"Read","timestamp":1777191733991},{"requestId":"req-ec338aed","toolName":"Read","timestamp":1777191733992},{"requestId":"req-ec338aed","toolName":"Read","timestamp":1777191733997}],"loops":{"highFrequency":[{"requestId":"req-52bb693f","toolName":"Read","count":6}],"consecutive":[{"requestId":"req-52bb693f","toolName":"Read","count":4,"startTs":1777191087935,"endTs":1777191092238},{"requestId":"req-75503240","toolName":"Grep","count":4,"startTs":1777191517723,"endTs":1777191517752},{"requestId":"req-ec338aed","toolName":"Grep","count":4,"startTs":1777191730714,"endTs":1777191730734}]}},{"sessionId":"31570413-833e-4bbf-862e-b766a42ff22f","handle":"31570413...a42ff22f","isActive":false,"agentId":"default","agentVersion":"","engine":"","totalCost":0.205154,"llmCalls":7,"requestCount":1,"totalTokens":124216,"avgLatencyMs":4752,"totalLatencyMs":33265,"startedMs":1777189987921,"latestMs":1777190781357,"modelBreakdown":[{"model":"gpt-5.3-codex","cost":0.205154,"calls":7,"tokens":124216}],"llmSequence":[{"requestId":"(unknown)","startMs":1777189987921,"model":"gpt-5.3-codex","cost":0.032625249999999995},{"requestId":"(unknown)","startMs":1777190759822,"model":"gpt-5.3-codex","cost":0.03274075},{"requestId":"(unknown)","startMs":1777190765504,"model":"gpt-5.3-codex","cost":0.031198999999999998},{"requestId":"(unknown)","startMs":1777190768479,"model":"gpt-5.3-codex","cost":0.030920749999999997},{"requestId":"(unknown)","startMs":1777190770978,"model":"gpt-5.3-codex","cost":0.03360175},{"requestId":"(unknown)","startMs":1777190774036,"model":"gpt-5.3-codex","cost":0.03404625},{"requestId":"(unknown)","startMs":1777190781357,"model":"gpt-5.3-codex","cost":0.010019799999999999}],"toolCounts":[{"tool":"Read","count":3},{"tool":"Edit","count":2},{"tool":"Grep","count":2}],"toolSequence":[{"requestId":"req-9989cbfe","toolName":"Grep","timestamp":1777190763211},{"requestId":"req-9989cbfe","toolName":"Grep","timestamp":1777190765259},{"requestId":"req-9989cbfe","toolName":"Read","timestamp":1777190767453},{"requestId":"req-9989cbfe","toolName":"Read","timestamp":1777190768240},{"requestId":"req-9989cbfe","toolName":"Read","timestamp":1777190769993},{"requestId":"req-9989cbfe","toolName":"Edit","timestamp":1777190772136},{"requestId":"req-9989cbfe","toolName":"Edit","timestamp":1777190773782}],"loops":{"highFrequency":[],"consecutive":[]}},{"sessionId":"39822378-248a-4f47-a16c-02613f4d812b","handle":"39822378...3f4d812b","isActive":false,"agentId":"default","agentVersion":"","engine":"","totalCost":2.392251,"llmCalls":24,"requestCount":1,"totalTokens":1582794,"avgLatencyMs":8110,"totalLatencyMs":194634,"startedMs":1777187497730,"latestMs":1777189024884,"modelBreakdown":[{"model":"gpt-5.3-codex","cost":2.392251,"calls":23,"tokens":1582794},{"model":"claude-opus-4-7","cost":0,"calls":1,"tokens":0}],"llmSequence":[{"requestId":"(unknown)","startMs":1777187497730,"model":"claude-opus-4-7","cost":0},{"requestId":"(unknown)","startMs":1777188103628,"model":"gpt-5.3-codex","cost":0.10218074999999999},{"requestId":"(unknown)","startMs":1777188238343,"model":"gpt-5.3-codex","cost":0.10957449999999999},{"requestId":"(unknown)","startMs":1777188255818,"model":"gpt-5.3-codex","cost":0.1097775},{"requestId":"(unknown)","startMs":1777188265461,"model":"gpt-5.3-codex","cost":0.1022406},{"requestId":"(unknown)","startMs":1777188327092,"model":"gpt-5.3-codex","cost":0.12037724999999999},{"requestId":"(unknown)","startMs":1777188338249,"model":"gpt-5.3-codex","cost":0.12942825},{"requestId":"(unknown)","startMs":1777188360180,"model":"gpt-5.3-codex","cost":0.033316149999999996},{"requestId":"(unknown)","startMs":1777188370494,"model":"gpt-5.3-codex","cost":0.1183735},{"requestId":"(unknown)","startMs":1777188375137,"model":"gpt-5.3-codex","cost":0.11751249999999999},{"requestId":"(unknown)","startMs":1777188378182,"model":"gpt-5.3-codex","cost":0.1266265},{"requestId":"(unknown)","startMs":1777188391336,"model":"gpt-5.3-codex","cost":0.1202005},{"requestId":"(unknown)","startMs":1777188394833,"model":"gpt-5.3-codex","cost":0.017747100000000002},{"requestId":"(unknown)","startMs":1777188398869,"model":"gpt-5.3-codex","cost":0.11251485},{"requestId":"(unknown)","startMs":1777188402707,"model":"gpt-5.3-codex","cost":0.13126749999999998},{"requestId":"(unknown)","startMs":1777188415873,"model":"gpt-5.3-codex","cost":0.12550825},{"requestId":"(unknown)","startMs":1777188419296,"model":"gpt-5.3-codex","cost":0.11506985},{"requestId":"(unknown)","startMs":1777188424967,"model":"gpt-5.3-codex","cost":0.12792325000000002},{"requestId":"(unknown)","startMs":1777188444320,"model":"gpt-5.3-codex","cost":0.11926985},{"requestId":"(unknown)","startMs":1777188449671,"model":"gpt-5.3-codex","cost":0.13211975},{"requestId":"(unknown)","startMs":1777188987079,"model":"gpt-5.3-codex","cost":0.1343041},{"requestId":"(unknown)","startMs":1777189001763,"model":"gpt-5.3-codex","cost":0.0312578},{"requestId":"(unknown)","startMs":1777189009649,"model":"gpt-5.3-codex","cost":0.13739425},{"requestId":"(unknown)","startMs":1777189024884,"model":"gpt-5.3-codex","cost":0.018266849999999998}],"toolCounts":[{"tool":"terminal","count":43}],"toolSequence":[{"requestId":"req-39fd64fc","toolName":"terminal","timestamp":1777187526786},{"requestId":"req-39fd64fc","toolName":"terminal","timestamp":1777187529792},{"requestId":"req-39fd64fc","toolName":"terminal","timestamp":1777187533266},{"requestId":"req-39fd64fc","toolName":"terminal","timestamp":1777187537002},{"requestId":"req-39fd64fc","toolName":"terminal","timestamp":1777187540013},{"requestId":"req-39fd64fc","toolName":"terminal","timestamp":1777187543809},{"requestId":"req-39fd64fc","toolName":"terminal","timestamp":1777187547813},{"requestId":"req-39fd64fc","toolName":"terminal","timestamp":1777187550447},{"requestId":"req-39fd64fc","toolName":"terminal","timestamp":1777187552812},{"requestId":"req-39fd64fc","toolName":"terminal","timestamp":1777187556238},{"requestId":"req-39fd64fc","toolName":"terminal","timestamp":1777187559103},{"requestId":"req-39fd64fc","toolName":"terminal","timestamp":1777187568548},{"requestId":"req-39fd64fc","toolName":"terminal","timestamp":1777187572703},{"requestId":"req-39fd64fc","toolName":"terminal","timestamp":1777187576472},{"requestId":"req-39fd64fc","toolName":"terminal","timestamp":1777187578831},{"requestId":"req-39fd64fc","toolName":"terminal","timestamp":1777187583151},{"requestId":"req-39fd64fc","toolName":"terminal","timestamp":1777187585940},{"requestId":"req-39fd64fc","toolName":"terminal","timestamp":1777187589161},{"requestId":"req-39fd64fc","toolName":"terminal","timestamp":1777187591959},{"requestId":"req-39fd64fc","toolName":"terminal","timestamp":1777187599709},{"requestId":"req-39fd64fc","toolName":"terminal","timestamp":1777187602484},{"requestId":"req-39fd64fc","toolName":"terminal","timestamp":1777187605039},{"requestId":"req-39fd64fc","toolName":"terminal","timestamp":1777187610195},{"requestId":"req-39fd64fc","toolName":"terminal","timestamp":1777187612886},{"requestId":"req-39fd64fc","toolName":"terminal","timestamp":1777187618968},{"requestId":"req-39fd64fc","toolName":"terminal","timestamp":1777187625699},{"requestId":"req-2a95e62c","toolName":"terminal","timestamp":1777187892236},{"requestId":"req-1e2304d1","toolName":"terminal","timestamp":1777188255533},{"requestId":"req-1e2304d1","toolName":"terminal","timestamp":1777188265148},{"requestId":"req-1e2304d1","toolName":"terminal","timestamp":1777188275303},{"requestId":"req-00f5d98e","toolName":"terminal","timestamp":1777188337967},{"requestId":"req-00f5d98e","toolName":"terminal","timestamp":1777188370176},{"requestId":"req-00f5d98e","toolName":"terminal","timestamp":1777188374802},{"requestId":"req-00f5d98e","toolName":"terminal","timestamp":1777188377860},{"requestId":"req-00f5d98e","toolName":"terminal","timestamp":1777188394533},{"requestId":"req-00f5d98e","toolName":"terminal","timestamp":1777188398541},{"requestId":"req-00f5d98e","toolName":"terminal","timestamp":1777188402413},{"requestId":"req-00f5d98e","toolName":"terminal","timestamp":1777188418992},{"requestId":"req-00f5d98e","toolName":"terminal","timestamp":1777188424373},{"requestId":"req-00f5d98e","toolName":"terminal","timestamp":1777188432312},{"requestId":"req-00f5d98e","toolName":"terminal","timestamp":1777188449372},{"requestId":"req-87699ed6","toolName":"terminal","timestamp":1777189001473},{"requestId":"req-87699ed6","toolName":"terminal","timestamp":1777189013277}],"loops":{"highFrequency":[{"requestId":"req-39fd64fc","toolName":"terminal","count":26},{"requestId":"req-00f5d98e","toolName":"terminal","count":11}],"consecutive":[{"requestId":"req-39fd64fc","toolName":"terminal","count":26,"startTs":1777187526786,"endTs":1777187625699},{"requestId":"req-00f5d98e","toolName":"terminal","count":11,"startTs":1777188337967,"endTs":1777188449372}]}},{"sessionId":"895981df-ed23-4888-ba46-8774828dbf69","handle":"895981df...828dbf69","isActive":false,"agentId":"default","agentVersion":"","engine":"","totalCost":0.1844,"llmCalls":1,"requestCount":1,"totalTokens":29442,"avgLatencyMs":499,"totalLatencyMs":499,"startedMs":1777187312450,"latestMs":1777187312450,"modelBreakdown":[{"model":"claude-opus-4-7","cost":0.1844,"calls":1,"tokens":29442}],"llmSequence":[{"requestId":"(unknown)","startMs":1777187312450,"model":"claude-opus-4-7","cost":0.1844}],"toolCounts":[],"toolSequence":[],"loops":{"highFrequency":[],"consecutive":[]}},{"sessionId":"76e561a8-246f-4524-ba6d-483fb3bed3e6","handle":"76e561a8...b3bed3e6","isActive":false,"agentId":"default","agentVersion":"","engine":"","totalCost":1.657073,"llmCalls":45,"requestCount":1,"totalTokens":1429869,"avgLatencyMs":4812,"totalLatencyMs":216552,"startedMs":1777186642216,"latestMs":1777187219749,"modelBreakdown":[{"model":"gpt-5.3-codex","cost":1.657073,"calls":45,"tokens":1429869}],"llmSequence":[{"requestId":"(unknown)","startMs":1777186642216,"model":"gpt-5.3-codex","cost":0.0040096},{"requestId":"(unknown)","startMs":1777186646881,"model":"gpt-5.3-codex","cost":0.0039220999999999995},{"requestId":"(unknown)","startMs":1777186650256,"model":"gpt-5.3-codex","cost":0.0090356},{"requestId":"(unknown)","startMs":1777186653289,"model":"gpt-5.3-codex","cost":0.00957635},{"requestId":"(unknown)","startMs":1777186656270,"model":"gpt-5.3-codex","cost":0.02511775},{"requestId":"(unknown)","startMs":1777186659018,"model":"gpt-5.3-codex","cost":0.02502675},{"requestId":"(unknown)","startMs":1777186661220,"model":"gpt-5.3-codex","cost":0.00649775},{"requestId":"(unknown)","startMs":1777186663461,"model":"gpt-5.3-codex","cost":0.0307055},{"requestId":"(unknown)","startMs":1777186666687,"model":"gpt-5.3-codex","cost":0.030899749999999997},{"requestId":"(unknown)","startMs":1777186669777,"model":"gpt-5.3-codex","cost":0.031479},{"requestId":"(unknown)","startMs":1777186672221,"model":"gpt-5.3-codex","cost":0.0332255},{"requestId":"(unknown)","startMs":1777186674666,"model":"gpt-5.3-codex","cost":0.03352125},{"requestId":"(unknown)","startMs":1777186677004,"model":"gpt-5.3-codex","cost":0.041028749999999996},{"requestId":"(unknown)","startMs":1777186687556,"model":"gpt-5.3-codex","cost":0.030336600000000002},{"requestId":"(unknown)","startMs":1777186692520,"model":"gpt-5.3-codex","cost":0.028602350000000002},{"requestId":"(unknown)","startMs":1777186700743,"model":"gpt-5.3-codex","cost":0.030105599999999996},{"requestId":"(unknown)","startMs":1777186702963,"model":"gpt-5.3-codex","cost":0.050841},{"requestId":"(unknown)","startMs":1777186715224,"model":"gpt-5.3-codex","cost":0.05452124999999999},{"requestId":"(unknown)","startMs":1777186725987,"model":"gpt-5.3-codex","cost":0.0381276},{"requestId":"(unknown)","startMs":1777186728341,"model":"gpt-5.3-codex","cost":0.01586025},{"requestId":"(unknown)","startMs":1777186730355,"model":"gpt-5.3-codex","cost":0.050512},{"requestId":"(unknown)","startMs":1777186732925,"model":"gpt-5.3-codex","cost":0.044432849999999996},{"requestId":"(unknown)","startMs":1777186744551,"model":"gpt-5.3-codex","cost":0.00787325},{"requestId":"(unknown)","startMs":1777186748136,"model":"gpt-5.3-codex","cost":0.01626905},{"requestId":"(unknown)","startMs":1777186751406,"model":"gpt-5.3-codex","cost":0.04128635},{"requestId":"(unknown)","startMs":1777186754154,"model":"gpt-5.3-codex","cost":0.04721955},{"requestId":"(unknown)","startMs":1777186761517,"model":"gpt-5.3-codex","cost":0.0120708},{"requestId":"(unknown)","startMs":1777186764251,"model":"gpt-5.3-codex","cost":0.010277399999999999},{"requestId":"(unknown)","startMs":1777186767538,"model":"gpt-5.3-codex","cost":0.01377635},{"requestId":"(unknown)","startMs":1777186769698,"model":"gpt-5.3-codex","cost":0.024292099999999997},{"requestId":"(unknown)","startMs":1777186782212,"model":"gpt-5.3-codex","cost":0.064176},{"requestId":"(unknown)","startMs":1777186788092,"model":"gpt-5.3-codex","cost":0.05556845},{"requestId":"(unknown)","startMs":1777186804320,"model":"gpt-5.3-codex","cost":0.0184611},{"requestId":"(unknown)","startMs":1777186807310,"model":"gpt-5.3-codex","cost":0.09132199999999999},{"requestId":"(unknown)","startMs":1777187180905,"model":"gpt-5.3-codex","cost":0.04482345},{"requestId":"(unknown)","startMs":1777187188755,"model":"gpt-5.3-codex","cost":0.08135574999999999},{"requestId":"(unknown)","startMs":1777187191524,"model":"gpt-5.3-codex","cost":0.02699515},{"requestId":"(unknown)","startMs":1777187195500,"model":"gpt-5.3-codex","cost":0.08879675},{"requestId":"(unknown)","startMs":1777187198503,"model":"gpt-5.3-codex","cost":0.094822},{"requestId":"(unknown)","startMs":1777187204613,"model":"gpt-5.3-codex","cost":0.04745335},{"requestId":"(unknown)","startMs":1777187207518,"model":"gpt-5.3-codex","cost":0.101668},{"requestId":"(unknown)","startMs":1777187210478,"model":"gpt-5.3-codex","cost":0.04407515},{"requestId":"(unknown)","startMs":1777187213883,"model":"gpt-5.3-codex","cost":0.06030675},{"requestId":"(unknown)","startMs":1777187216633,"model":"gpt-5.3-codex","cost":0.0210686},{"requestId":"(unknown)","startMs":1777187219749,"model":"gpt-5.3-codex","cost":0.0157304}],"toolCounts":[{"tool":"terminal","count":45}],"toolSequence":[{"requestId":"req-f38e3859","toolName":"terminal","timestamp":1777186646591},{"requestId":"req-f38e3859","toolName":"terminal","timestamp":1777186649766},{"requestId":"req-f38e3859","toolName":"terminal","timestamp":1777186652921},{"requestId":"req-f38e3859","toolName":"terminal","timestamp":1777186655986},{"requestId":"req-f38e3859","toolName":"terminal","timestamp":1777186658730},{"requestId":"req-f38e3859","toolName":"terminal","timestamp":1777186660920},{"requestId":"req-f38e3859","toolName":"terminal","timestamp":1777186663073},{"requestId":"req-f38e3859","toolName":"terminal","timestamp":1777186666371},{"requestId":"req-f38e3859","toolName":"terminal","timestamp":1777186669457},{"requestId":"req-f38e3859","toolName":"terminal","timestamp":1777186671695},{"requestId":"req-f38e3859","toolName":"terminal","timestamp":1777186674292},{"requestId":"req-f38e3859","toolName":"terminal","timestamp":1777186676694},{"requestId":"req-f38e3859","toolName":"terminal","timestamp":1777186687208},{"requestId":"req-f38e3859","toolName":"terminal","timestamp":1777186692222},{"requestId":"req-f38e3859","toolName":"terminal","timestamp":1777186700470},{"requestId":"req-f38e3859","toolName":"terminal","timestamp":1777186702642},{"requestId":"req-f38e3859","toolName":"terminal","timestamp":1777186714890},{"requestId":"req-f38e3859","toolName":"terminal","timestamp":1777186725689},{"requestId":"req-f38e3859","toolName":"terminal","timestamp":1777186728038},{"requestId":"req-f38e3859","toolName":"terminal","timestamp":1777186730021},{"requestId":"req-f38e3859","toolName":"terminal","timestamp":1777186732633},{"requestId":"req-f38e3859","toolName":"terminal","timestamp":1777186741752},{"requestId":"req-f38e3859","toolName":"terminal","timestamp":1777186747697},{"requestId":"req-f38e3859","toolName":"terminal","timestamp":1777186751066},{"requestId":"req-f38e3859","toolName":"terminal","timestamp":1777186753776},{"requestId":"req-f38e3859","toolName":"terminal","timestamp":1777186761210},{"requestId":"req-f38e3859","toolName":"terminal","timestamp":1777186763958},{"requestId":"req-f38e3859","toolName":"terminal","timestamp":1777186767157},{"requestId":"req-f38e3859","toolName":"terminal","timestamp":1777186769399},{"requestId":"req-f38e3859","toolName":"terminal","timestamp":1777186779299},{"requestId":"req-f38e3859","toolName":"terminal","timestamp":1777186787791},{"requestId":"req-f38e3859","toolName":"terminal","timestamp":1777186804029},{"requestId":"req-f38e3859","toolName":"terminal","timestamp":1777186807015},{"requestId":"req-c57a9754","toolName":"terminal","timestamp":1777187188440},{"requestId":"req-c57a9754","toolName":"terminal","timestamp":1777187191231},{"requestId":"req-c57a9754","toolName":"terminal","timestamp":1777187195163},{"requestId":"req-c57a9754","toolName":"terminal","timestamp":1777187198135},{"requestId":"req-c57a9754","toolName":"terminal","timestamp":1777187204224},{"requestId":"req-c57a9754","toolName":"terminal","timestamp":1777187207163},{"requestId":"req-c57a9754","toolName":"terminal","timestamp":1777187210178},{"requestId":"req-c57a9754","toolName":"terminal","timestamp":1777187213626},{"requestId":"req-c57a9754","toolName":"terminal","timestamp":1777187216337},{"requestId":"req-c57a9754","toolName":"terminal","timestamp":1777187219386},{"requestId":"req-c57a9754","toolName":"terminal","timestamp":1777187222053},{"requestId":"req-c57a9754","toolName":"terminal","timestamp":1777187224903}],"loops":{"highFrequency":[{"requestId":"req-f38e3859","toolName":"terminal","count":33},{"requestId":"req-c57a9754","toolName":"terminal","count":12}],"consecutive":[{"requestId":"req-f38e3859","toolName":"terminal","count":33,"startTs":1777186646591,"endTs":1777186807015},{"requestId":"req-c57a9754","toolName":"terminal","count":12,"startTs":1777187188440,"endTs":1777187224903}]}},{"sessionId":"143a4a0b-c0f2-42d4-b87e-d021ee34a78d","handle":"143a4a0b...ee34a78d","isActive":false,"agentId":"default","agentVersion":"","engine":"","totalCost":1.970521,"llmCalls":41,"requestCount":1,"totalTokens":1487151,"avgLatencyMs":6382,"totalLatencyMs":261655,"startedMs":1777181884803,"latestMs":1777184702318,"modelBreakdown":[{"model":"gpt-5.3-codex","cost":1.970521,"calls":41,"tokens":1487151}],"llmSequence":[{"requestId":"(unknown)","startMs":1777181884803,"model":"gpt-5.3-codex","cost":0.015372},{"requestId":"(unknown)","startMs":1777181890649,"model":"gpt-5.3-codex","cost":0.018856249999999998},{"requestId":"(unknown)","startMs":1777181894770,"model":"gpt-5.3-codex","cost":0.020006},{"requestId":"(unknown)","startMs":1777181899106,"model":"gpt-5.3-codex","cost":0.0097146},{"requestId":"(unknown)","startMs":1777181902463,"model":"gpt-5.3-codex","cost":0.021637},{"requestId":"(unknown)","startMs":1777181905169,"model":"gpt-5.3-codex","cost":0.027744500000000002},{"requestId":"(unknown)","startMs":1777181908037,"model":"gpt-5.3-codex","cost":0.01379455},{"requestId":"(unknown)","startMs":1777181910403,"model":"gpt-5.3-codex","cost":0.0117068},{"requestId":"(unknown)","startMs":1777181913742,"model":"gpt-5.3-codex","cost":0.0400715},{"requestId":"(unknown)","startMs":1777181917527,"model":"gpt-5.3-codex","cost":0.0137291},{"requestId":"(unknown)","startMs":1777181920224,"model":"gpt-5.3-codex","cost":0.04914349999999999},{"requestId":"(unknown)","startMs":1777181923138,"model":"gpt-5.3-codex","cost":0.0507885},{"requestId":"(unknown)","startMs":1777181925296,"model":"gpt-5.3-codex","cost":0.0166922},{"requestId":"(unknown)","startMs":1777181928178,"model":"gpt-5.3-codex","cost":0.05579525},{"requestId":"(unknown)","startMs":1777181930549,"model":"gpt-5.3-codex","cost":0.04472299999999999},{"requestId":"(unknown)","startMs":1777181934119,"model":"gpt-5.3-codex","cost":0.032262650000000004},{"requestId":"(unknown)","startMs":1777181936834,"model":"gpt-5.3-codex","cost":0.05660725},{"requestId":"(unknown)","startMs":1777181940106,"model":"gpt-5.3-codex","cost":0.068992},{"requestId":"(unknown)","startMs":1777181957326,"model":"gpt-5.3-codex","cost":0.059680250000000004},{"requestId":"(unknown)","startMs":1777181960156,"model":"gpt-5.3-codex","cost":0.03637235},{"requestId":"(unknown)","startMs":1777181980135,"model":"gpt-5.3-codex","cost":0.06337100000000001},{"requestId":"(unknown)","startMs":1777181984449,"model":"gpt-5.3-codex","cost":0.01258565},{"requestId":"(unknown)","startMs":1777181986681,"model":"gpt-5.3-codex","cost":0.07837725000000001},{"requestId":"(unknown)","startMs":1777182005231,"model":"gpt-5.3-codex","cost":0.06641249999999999},{"requestId":"(unknown)","startMs":1777182009022,"model":"gpt-5.3-codex","cost":0.02150785},{"requestId":"(unknown)","startMs":1777182011677,"model":"gpt-5.3-codex","cost":0.06808375},{"requestId":"(unknown)","startMs":1777182015446,"model":"gpt-5.3-codex","cost":0.013512799999999998},{"requestId":"(unknown)","startMs":1777182018237,"model":"gpt-5.3-codex","cost":0.0222551},{"requestId":"(unknown)","startMs":1777182020683,"model":"gpt-5.3-codex","cost":0.0935375},{"requestId":"(unknown)","startMs":1777182044289,"model":"gpt-5.3-codex","cost":0.07778574999999999},{"requestId":"(unknown)","startMs":1777182047045,"model":"gpt-5.3-codex","cost":0.08395625},{"requestId":"(unknown)","startMs":1777182050550,"model":"gpt-5.3-codex","cost":0.08576049999999999},{"requestId":"(unknown)","startMs":1777182054235,"model":"gpt-5.3-codex","cost":0.03343935},{"requestId":"(unknown)","startMs":1777182057617,"model":"gpt-5.3-codex","cost":0.09179100000000001},{"requestId":"(unknown)","startMs":1777182060349,"model":"gpt-5.3-codex","cost":0.0575981},{"requestId":"(unknown)","startMs":1777182529906,"model":"gpt-5.3-codex","cost":0.10590474999999999},{"requestId":"(unknown)","startMs":1777182538600,"model":"gpt-5.3-codex","cost":0.1111005},{"requestId":"(unknown)","startMs":1777184688585,"model":"gpt-5.3-codex","cost":0.01997485},{"requestId":"(unknown)","startMs":1777184693316,"model":"gpt-5.3-codex","cost":0.06296605},{"requestId":"(unknown)","startMs":1777184696753,"model":"gpt-5.3-codex","cost":0.11343149999999999},{"requestId":"(unknown)","startMs":1777184702318,"model":"gpt-5.3-codex","cost":0.02347975}],"toolCounts":[{"tool":"terminal","count":38}],"toolSequence":[{"requestId":"req-da02b109","toolName":"terminal","timestamp":1777181890376},{"requestId":"req-da02b109","toolName":"terminal","timestamp":1777181894327},{"requestId":"req-da02b109","toolName":"terminal","timestamp":1777181898817},{"requestId":"req-da02b109","toolName":"terminal","timestamp":1777181902180},{"requestId":"req-da02b109","toolName":"terminal","timestamp":1777181904839},{"requestId":"req-da02b109","toolName":"terminal","timestamp":1777181907608},{"requestId":"req-da02b109","toolName":"terminal","timestamp":1777181910065},{"requestId":"req-da02b109","toolName":"terminal","timestamp":1777181913419},{"requestId":"req-da02b109","toolName":"terminal","timestamp":1777181917216},{"requestId":"req-da02b109","toolName":"terminal","timestamp":1777181919895},{"requestId":"req-da02b109","toolName":"terminal","timestamp":1777181923584},{"requestId":"req-da02b109","toolName":"terminal","timestamp":1777181927296},{"requestId":"req-da02b109","toolName":"terminal","timestamp":1777181928828},{"requestId":"req-da02b109","toolName":"terminal","timestamp":1777181933267},{"requestId":"req-da02b109","toolName":"terminal","timestamp":1777181934433},{"requestId":"req-da02b109","toolName":"terminal","timestamp":1777181936806},{"requestId":"req-da02b109","toolName":"terminal","timestamp":1777181946893},{"requestId":"req-da02b109","toolName":"terminal","timestamp":1777181956983},{"requestId":"req-da02b109","toolName":"terminal","timestamp":1777181963152},{"requestId":"req-da02b109","toolName":"terminal","timestamp":1777181978956},{"requestId":"req-da02b109","toolName":"terminal","timestamp":1777181984148},{"requestId":"req-da02b109","toolName":"terminal","timestamp":1777181986362},{"requestId":"req-da02b109","toolName":"terminal","timestamp":1777182004909},{"requestId":"req-da02b109","toolName":"terminal","timestamp":1777182007506},{"requestId":"req-da02b109","toolName":"terminal","timestamp":1777182011217},{"requestId":"req-da02b109","toolName":"terminal","timestamp":1777182015004},{"requestId":"req-da02b109","toolName":"terminal","timestamp":1777182018664},{"requestId":"req-da02b109","toolName":"terminal","timestamp":1777182022550},{"requestId":"req-da02b109","toolName":"terminal","timestamp":1777182043863},{"requestId":"req-da02b109","toolName":"terminal","timestamp":1777182046702},{"requestId":"req-da02b109","toolName":"terminal","timestamp":1777182050250},{"requestId":"req-da02b109","toolName":"terminal","timestamp":1777182053876},{"requestId":"req-da02b109","toolName":"terminal","timestamp":1777182057320},{"requestId":"req-da02b109","toolName":"terminal","timestamp":1777182060031},{"requestId":"req-f6689de1","toolName":"terminal","timestamp":1777182538305},{"requestId":"req-5bc55e53","toolName":"terminal","timestamp":1777184692978},{"requestId":"req-5bc55e53","toolName":"terminal","timestamp":1777184696441},{"requestId":"req-5bc55e53","toolName":"terminal","timestamp":1777184702025}],"loops":{"highFrequency":[{"requestId":"req-da02b109","toolName":"terminal","count":34}],"consecutive":[{"requestId":"req-da02b109","toolName":"terminal","count":34,"startTs":1777181890376,"endTs":1777182060031}]}}]};
+    const sessions = Array.isArray(data.sessions) ? data.sessions : [];
+    const byId = new Map(sessions.map((session) => [session.sessionId, session]));
+
+    const state = {
+      search: '',
+      selectedA: (() => {
+        const active = sessions.find((session) => session.isActive);
+        return active ? active.sessionId : (sessions[0] ? sessions[0].sessionId : '');
+      })(),
+      selectedB: (() => {
+        const active = sessions.find((session) => session.isActive);
+        const fallback = sessions.find((session) => !active || session.sessionId !== active.sessionId);
+        return fallback ? fallback.sessionId : (sessions[0] ? sessions[0].sessionId : '');
+      })(),
+    };
+
+    const esc = (v) => String(v ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+    const num = (v) => Number(v || 0);
+    const fmtNum = (v) => num(v).toLocaleString();
+    const fmtMoney = (v) => '$' + num(v).toFixed(4);
+    const fmtMs = (v) => {
+      const value = num(v);
+      if (!value) return '-';
+      if (value < 1000) return Math.round(value) + 'ms';
+      return (value / 1000).toFixed(2) + 's';
+    };
+    const fmtAgo = (ms) => {
+      const value = num(ms);
+      if (!value) return '-';
+      const deltaSec = Math.floor((Date.now() - value) / 1000);
+      if (deltaSec < 60) return 'just now';
+      if (deltaSec < 3600) return Math.floor(deltaSec / 60) + 'm ago';
+      if (deltaSec < 86400) return Math.floor(deltaSec / 3600) + 'h ago';
+      return Math.floor(deltaSec / 86400) + 'd ago';
+    };
+
+    const el = {
+      search: document.getElementById('session-search'),
+      list: document.getElementById('session-list'),
+      a: document.getElementById('session-a'),
+      b: document.getElementById('session-b'),
+      copyA: document.getElementById('copy-a'),
+      copyB: document.getElementById('copy-b'),
+      swap: document.getElementById('swap'),
+      summaryList: document.getElementById('summary-list'),
+      metrics: document.getElementById('metrics'),
+      panes: document.getElementById('session-panes'),
+      toolDiffBody: document.getElementById('tool-diff-body'),
+      modelDiffBody: document.getElementById('model-diff-body'),
+      toolSeqA: document.getElementById('tool-seq-a'),
+      toolSeqB: document.getElementById('tool-seq-b'),
+      llmSeqA: document.getElementById('llm-seq-a'),
+      llmSeqB: document.getElementById('llm-seq-b'),
+    };
+
+    function postCopy(sessionId) {
+      if (!sessionId) return;
+      window.parent.postMessage({
+        source: 'agentide-wow-widget',
+        type: 'copySessionId',
+        sessionId,
+      }, '*');
+    }
+
+    function getFilteredSessions() {
+      const query = state.search.trim().toLowerCase();
+      if (!query) return sessions;
+      return sessions.filter((session) => {
+        const sid = String(session.sessionId || '').toLowerCase();
+        const agent = String(session.agentId || '').toLowerCase();
+        const engine = String(session.engine || '').toLowerCase();
+        const version = String(session.agentVersion || '').toLowerCase();
+        return sid.includes(query) || agent.includes(query) || engine.includes(query) || version.includes(query);
+      });
+    }
+
+    function renderSessionList() {
+      const filtered = getFilteredSessions();
+      if (!filtered.length) {
+        el.list.innerHTML = '<div class="empty">No matching sessions.</div>';
+        return;
+      }
+      el.list.innerHTML = filtered.map((session) => {
+        const live = session.isActive ? '<span class="live">LIVE</span>' : '';
+        return '<div class="session-item">' +
+          '<div class="session-item-title"><span title="' + esc(session.sessionId) + '">' + esc(session.handle || session.sessionId) + '</span>' + live + '</div>' +
+          '<div class="session-meta">' +
+            '<span>' + fmtMoney(session.totalCost) + '</span>' +
+            '<span>' + fmtNum(session.llmCalls) + ' LLM</span>' +
+            '<span>' + fmtNum(session.requestCount) + ' req</span>' +
+            '<span>' + esc(fmtAgo(session.latestMs)) + '</span>' +
+          '</div>' +
+          '<div class="session-meta">' +
+            '<span>agent ' + esc(session.agentId || '(n/a)') + '</span>' +
+            '<span>engine ' + esc(session.engine || '(n/a)') + '</span>' +
+            '<span>version ' + esc(session.agentVersion || '(n/a)') + '</span>' +
+          '</div>' +
+          '<div class="assign">' +
+            '<button type="button" data-slot="a" data-session-id="' + esc(session.sessionId) + '">Set A</button>' +
+            '<button type="button" data-slot="b" data-session-id="' + esc(session.sessionId) + '">Set B</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+
+      el.list.querySelectorAll('button[data-slot]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const slot = btn.getAttribute('data-slot');
+          const sessionId = btn.getAttribute('data-session-id');
+          if (!sessionId) return;
+          if (slot === 'a') {
+            state.selectedA = sessionId;
+            if (state.selectedA === state.selectedB) {
+              const other = sessions.find((session) => session.sessionId !== state.selectedA);
+              if (other) state.selectedB = other.sessionId;
+            }
+          } else {
+            state.selectedB = sessionId;
+            if (state.selectedA === state.selectedB) {
+              const other = sessions.find((session) => session.sessionId !== state.selectedB);
+              if (other) state.selectedA = other.sessionId;
+            }
+          }
+          render();
+        });
+      });
+    }
+
+    function renderSelectors() {
+      const options = sessions.map((session) =>
+        '<option value="' + esc(session.sessionId) + '">' + esc((session.handle || session.sessionId) + ' · ' + (session.engine || 'engine:n/a') + ' · ' + fmtMoney(session.totalCost)) + '</option>'
+      ).join('');
+      el.a.innerHTML = options;
+      el.b.innerHTML = options;
+      if (!byId.has(state.selectedA) && sessions[0]) {
+        state.selectedA = sessions[0].sessionId;
+      }
+      if (!byId.has(state.selectedB) && sessions[1]) {
+        state.selectedB = sessions[1].sessionId;
+      }
+      if (state.selectedA === state.selectedB) {
+        const other = sessions.find((session) => session.sessionId !== state.selectedA);
+        if (other) {
+          state.selectedB = other.sessionId;
+        }
+      }
+      el.a.value = state.selectedA || '';
+      el.b.value = state.selectedB || '';
+    }
+
+    function deltaClass(delta, betterWhenLower = true) {
+      if (delta === 0) return 'delta-neutral';
+      const improved = betterWhenLower ? delta < 0 : delta > 0;
+      return improved ? 'delta-good' : 'delta-bad';
+    }
+
+    function ratioText(a, b) {
+      const left = Math.max(0.000001, num(a));
+      const right = Math.max(0.000001, num(b));
+      return (right / left).toFixed(2) + 'x';
+    }
+
+    function buildWhatChanged(a, b, toolRows, modelRows) {
+      const lines = [];
+      const costDelta = num(b.totalCost) - num(a.totalCost);
+      if (Math.abs(costDelta) > 0.0005) {
+        if (costDelta > 0) {
+          lines.push('Session B cost ' + ratioText(a.totalCost, b.totalCost) + ' more (' + fmtMoney(b.totalCost) + ' vs ' + fmtMoney(a.totalCost) + ').');
+        } else {
+          lines.push('Session B cost less (' + fmtMoney(b.totalCost) + ' vs ' + fmtMoney(a.totalCost) + ').');
+        }
+      }
+      const latencyDelta = num(b.totalLatencyMs) - num(a.totalLatencyMs);
+      if (Math.abs(latencyDelta) > 100) {
+        lines.push('Total latency changed by ' + fmtMs(Math.abs(latencyDelta)) + (latencyDelta > 0 ? ' higher in B.' : ' lower in B.'));
+      }
+      const tokenDelta = num(b.totalTokens) - num(a.totalTokens);
+      if (Math.abs(tokenDelta) > 200) {
+        lines.push('Token usage delta: ' + (tokenDelta > 0 ? '+' : '') + fmtNum(tokenDelta) + ' (B-A).');
+      }
+      const topToolShift = toolRows[0];
+      if (topToolShift && Math.abs(topToolShift.delta) >= 3) {
+        lines.push('Biggest tool shift: ' + topToolShift.tool + ' changed by ' + (topToolShift.delta > 0 ? '+' : '') + topToolShift.delta + ' calls.');
+      }
+      const loopB = Array.isArray(b.loops?.highFrequency) ? b.loops.highFrequency[0] : null;
+      if (loopB) {
+        lines.push('Loop risk in B: ' + loopB.toolName + ' called ' + loopB.count + ' times in request ' + loopB.requestId + '.');
+      }
+      const loopA = Array.isArray(a.loops?.highFrequency) ? a.loops.highFrequency[0] : null;
+      if (loopA) {
+        lines.push('Loop seen in A too: ' + loopA.toolName + ' x' + loopA.count + '.');
+      }
+      const newModelInB = modelRows.find((row) => row.callsA === 0 && row.callsB > 0);
+      if (newModelInB) {
+        lines.push('Session B used new model ' + newModelInB.model + ' (' + fmtMoney(newModelInB.costB) + ').');
+      }
+      if (!lines.length) {
+        lines.push('No major regressions or shifts detected between these two sessions.');
+      }
+      return lines.slice(0, 7);
+    }
+
+    function buildToolDiff(a, b) {
+      const mapA = new Map((a.toolCounts || []).map((item) => [item.tool, item.count]));
+      const mapB = new Map((b.toolCounts || []).map((item) => [item.tool, item.count]));
+      const keys = new Set([...mapA.keys(), ...mapB.keys()]);
+      const loopsA = new Set((a.loops?.highFrequency || []).map((loop) => loop.toolName));
+      const loopsB = new Set((b.loops?.highFrequency || []).map((loop) => loop.toolName));
+      return [...keys].map((tool) => {
+        const countA = num(mapA.get(tool));
+        const countB = num(mapB.get(tool));
+        return {
+          tool,
+          countA,
+          countB,
+          delta: countB - countA,
+          loopA: loopsA.has(tool),
+          loopB: loopsB.has(tool),
+        };
+      }).sort((x, y) => Math.abs(y.delta) - Math.abs(x.delta) || y.countB - x.countB || x.tool.localeCompare(y.tool));
+    }
+
+    function buildModelDiff(a, b) {
+      const mapA = new Map((a.modelBreakdown || []).map((item) => [item.model, item]));
+      const mapB = new Map((b.modelBreakdown || []).map((item) => [item.model, item]));
+      const keys = new Set([...mapA.keys(), ...mapB.keys()]);
+      return [...keys].map((model) => {
+        const left = mapA.get(model) || { cost: 0, calls: 0 };
+        const right = mapB.get(model) || { cost: 0, calls: 0 };
+        return {
+          model,
+          costA: num(left.cost),
+          costB: num(right.cost),
+          callsA: num(left.calls),
+          callsB: num(right.calls),
+          delta: num(right.cost) - num(left.cost),
+        };
+      }).sort((x, y) => Math.abs(y.delta) - Math.abs(x.delta) || y.costB - x.costB || x.model.localeCompare(y.model));
+    }
+
+    function renderMetrics(a, b) {
+      const metrics = [
+        { label: 'Cost', a: a.totalCost, b: b.totalCost, format: fmtMoney, lowerIsBetter: true },
+        { label: 'Total latency', a: a.totalLatencyMs, b: b.totalLatencyMs, format: fmtMs, lowerIsBetter: true },
+        { label: 'Tokens', a: a.totalTokens, b: b.totalTokens, format: fmtNum, lowerIsBetter: true },
+        { label: 'LLM calls', a: a.llmCalls, b: b.llmCalls, format: fmtNum, lowerIsBetter: true },
+      ];
+      el.metrics.innerHTML = metrics.map((metric) => {
+        const delta = num(metric.b) - num(metric.a);
+        const sign = delta > 0 ? '+' : '';
+        const cls = deltaClass(delta, metric.lowerIsBetter);
+        return '<div class="metric">' +
+          '<div class="metric-label">' + esc(metric.label) + '</div>' +
+          '<div class="metric-value">' + esc(metric.format(metric.a)) + ' → ' + esc(metric.format(metric.b)) + '</div>' +
+          '<div class="metric-delta ' + cls + '">' + esc(sign + (metric.label === 'Cost' ? fmtMoney(delta) : metric.format(delta)) + ' (B-A)') + '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    function renderPanes(a, b) {
+      const renderPane = (session, label) => {
+        return '<div class="pane">' +
+          '<h3>' + esc(label) + '<span class="small">' + esc(session.handle) + '</span></h3>' +
+          '<div class="small">session: ' + esc(session.sessionId) + '</div>' +
+          '<div class="small">agent: ' + esc(session.agentId || '(n/a)') + ' · engine: ' + esc(session.engine || '(n/a)') + ' · version: ' + esc(session.agentVersion || '(n/a)') + '</div>' +
+          '<div class="small">started: ' + esc(new Date(session.startedMs).toLocaleString()) + ' · latest: ' + esc(fmtAgo(session.latestMs)) + '</div>' +
+          '<div class="small">cost ' + fmtMoney(session.totalCost) + ' · requests ' + fmtNum(session.requestCount) + ' · avg latency ' + fmtMs(session.avgLatencyMs) + '</div>' +
+          '<div class="small">loops: ' + fmtNum((session.loops?.highFrequency || []).length) + ' high-frequency, ' + fmtNum((session.loops?.consecutive || []).length) + ' consecutive-run</div>' +
+        '</div>';
+      };
+      el.panes.innerHTML = renderPane(a, 'Session A') + renderPane(b, 'Session B');
+    }
+
+    function renderToolDiff(toolRows) {
+      if (!toolRows.length) {
+        el.toolDiffBody.innerHTML = '<tr><td colspan="4"><div class="empty">No tool data available.</div></td></tr>';
+        return;
+      }
+      el.toolDiffBody.innerHTML = toolRows.map((row) => {
+        const cls = deltaClass(row.delta, true);
+        const loopBadgeA = row.loopA ? '<span class="loop-badge">LOOP A</span>' : '';
+        const loopBadgeB = row.loopB ? '<span class="loop-badge">LOOP B</span>' : '';
+        return '<tr>' +
+          '<td>' + esc(row.tool) + loopBadgeA + loopBadgeB + '</td>' +
+          '<td>' + esc(fmtNum(row.countA)) + '</td>' +
+          '<td>' + esc(fmtNum(row.countB)) + '</td>' +
+          '<td class="' + cls + '">' + esc((row.delta > 0 ? '+' : '') + fmtNum(row.delta)) + '</td>' +
+        '</tr>';
+      }).join('');
+    }
+
+    function renderModelDiff(modelRows) {
+      if (!modelRows.length) {
+        el.modelDiffBody.innerHTML = '<tr><td colspan="5"><div class="empty">No model data available.</div></td></tr>';
+        return;
+      }
+      el.modelDiffBody.innerHTML = modelRows.map((row) => {
+        const cls = deltaClass(row.delta, true);
+        return '<tr>' +
+          '<td>' + esc(row.model) + '</td>' +
+          '<td>' + esc(fmtMoney(row.costA)) + '</td>' +
+          '<td>' + esc(fmtMoney(row.costB)) + '</td>' +
+          '<td>' + esc(fmtNum(row.callsA) + ' / ' + fmtNum(row.callsB)) + '</td>' +
+          '<td class="' + cls + '">' + esc((row.delta > 0 ? '+' : '') + fmtMoney(row.delta)) + '</td>' +
+        '</tr>';
+      }).join('');
+    }
+
+    function renderSequence(listEl, sequence, formatter) {
+      if (!sequence.length) {
+        listEl.innerHTML = '<li>(no events)</li>';
+        return;
+      }
+      listEl.innerHTML = sequence
+        .slice(0, 36)
+        .map((item, index) => '<li>' + esc((index + 1) + '. ' + formatter(item)) + '</li>')
+        .join('');
+    }
+
+    function renderComparison() {
+      const a = byId.get(state.selectedA);
+      const b = byId.get(state.selectedB);
+      if (!a || !b) {
+        el.summaryList.innerHTML = '<li>Select two sessions to compare.</li>';
+        el.metrics.innerHTML = '';
+        el.panes.innerHTML = '';
+        el.toolDiffBody.innerHTML = '<tr><td colspan="4"><div class="empty">Select sessions.</div></td></tr>';
+        el.modelDiffBody.innerHTML = '<tr><td colspan="5"><div class="empty">Select sessions.</div></td></tr>';
+        return;
+      }
+
+      const toolRows = buildToolDiff(a, b);
+      const modelRows = buildModelDiff(a, b);
+      const summaryLines = buildWhatChanged(a, b, toolRows, modelRows);
+      el.summaryList.innerHTML = summaryLines.map((line) => '<li>' + esc(line) + '</li>').join('');
+      renderMetrics(a, b);
+      renderPanes(a, b);
+      renderToolDiff(toolRows);
+      renderModelDiff(modelRows);
+
+      renderSequence(el.toolSeqA, a.toolSequence || [], (item) => (item.requestId || '(req)') + ' · ' + (item.toolName || '(tool)'));
+      renderSequence(el.toolSeqB, b.toolSequence || [], (item) => (item.requestId || '(req)') + ' · ' + (item.toolName || '(tool)'));
+      renderSequence(el.llmSeqA, a.llmSequence || [], (item) => (item.requestId || '(req)') + ' · ' + (item.model || 'unknown'));
+      renderSequence(el.llmSeqB, b.llmSequence || [], (item) => (item.requestId || '(req)') + ' · ' + (item.model || 'unknown'));
+    }
+
+    function render() {
+      renderSelectors();
+      renderSessionList();
+      renderComparison();
+    }
+
+    el.search.addEventListener('input', () => {
+      state.search = el.search.value || '';
+      renderSessionList();
+    });
+    el.a.addEventListener('change', () => {
+      state.selectedA = el.a.value;
+      if (state.selectedA === state.selectedB) {
+        const other = sessions.find((session) => session.sessionId !== state.selectedA);
+        if (other) {
+          state.selectedB = other.sessionId;
+        }
+      }
+      render();
+    });
+    el.b.addEventListener('change', () => {
+      state.selectedB = el.b.value;
+      if (state.selectedA === state.selectedB) {
+        const other = sessions.find((session) => session.sessionId !== state.selectedB);
+        if (other) {
+          state.selectedA = other.sessionId;
+        }
+      }
+      render();
+    });
+    el.copyA.addEventListener('click', () => {
+      postCopy(state.selectedA);
+      el.copyA.textContent = 'Copied A';
+      setTimeout(() => { el.copyA.textContent = 'Copy A session id'; }, 1100);
+    });
+    el.copyB.addEventListener('click', () => {
+      postCopy(state.selectedB);
+      el.copyB.textContent = 'Copied B';
+      setTimeout(() => { el.copyB.textContent = 'Copy B session id'; }, 1100);
+    });
+    el.swap.addEventListener('click', () => {
+      const temp = state.selectedA;
+      state.selectedA = state.selectedB;
+      state.selectedB = temp;
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>
