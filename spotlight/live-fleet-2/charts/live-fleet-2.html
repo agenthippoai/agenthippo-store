@@ -1,0 +1,301 @@
+<!doctype html>
+<html data-live-fleet-shell="3">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width,initial-scale=1" />
+	<title>Live Fleet 2</title>
+	<style>
+		:root { color-scheme: dark; --bg: #0b1020; --surface: #11182b; --border: #1f2f4a; --muted: #94a3b8; --text: #e2e8f0; }
+		* { box-sizing: border-box; }
+		body { margin: 0; background: var(--bg); color: var(--text); font: 12px/1.5 ui-sans-serif, system-ui; }
+		#summary { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 8px; padding: 10px 12px; background: #0f172a; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+		.kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; }
+		.kpi .label { color: var(--muted); font-size: 10px; text-transform: uppercase; }
+		.kpi .value { font-size: 16px; font-weight: 700; }
+		#controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--surface); }
+		#controls input, #controls select { background: #0f172a; color: var(--text); border: 1px solid #334155; border-radius: 6px; padding: 5px 8px; }
+		#controls .meta { margin-left: auto; color: var(--muted); font-size: 11px; }
+		.btn { background: #1e3a5f; color: #93c5fd; border: 1px solid #3b82f6; border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+		#msg { padding: 6px 12px; color: #fbbf24; font-size: 11px; min-height: 18px; }
+		#lanes { display: flex; flex-direction: column; gap: 12px; padding: 12px; }
+		.swimlane { display: flex; flex-direction: column; gap: 8px; }
+		.swimlane-header { display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 4px 0; user-select: none; }
+		.swimlane-header:hover { opacity: .9; }
+		.row-toggle { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--muted); flex-shrink: 0; }
+		.swimlane.collapsed .row-toggle::before { content: '▶'; }
+		.swimlane:not(.collapsed) .row-toggle::before { content: '▼'; }
+		.swimlane-title { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--muted); margin: 0; }
+		.swimlane.active .swimlane-title { color: #4ade80; }
+		.swimlane.done .swimlane-title { color: var(--muted); }
+		.lane-cards { display: flex; flex-wrap: wrap; gap: 8px; }
+		.swimlane.collapsed .lane-cards { display: none; }
+		.card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px; min-width: 260px; max-width: 320px; flex: 1 1 260px; cursor: pointer; }
+		.card:hover { border-color: #334155; }
+		.badge { font-size: 10px; border-radius: 999px; padding: 2px 8px; font-weight: 600; }
+		.badge.in_progress { background: rgba(74,222,128,.2); color: #4ade80; border: 1px solid #22c55e; }
+		.badge.done { background: rgba(148,163,184,.15); color: var(--muted); border: 1px solid #475569; }
+		.title { font-weight: 700; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+		.sub { color: var(--muted); font-size: 11px; margin-top: 4px; }
+		.empty { color: var(--muted); font-style: italic; padding: 8px 0; width: 100%; }
+	</style>
+</head>
+<body>
+	<div id="summary"></div>
+	<div id="controls">
+		<input id="search" type="search" placeholder="Filter sessions…" />
+		<select id="status-filter">
+			<option value="">All statuses</option>
+			<option value="in_progress">In progress</option>
+			<option value="done">Done</option>
+		</select>
+		<button type="button" class="btn" id="refresh-btn">Refresh</button>
+		<span class="meta" id="updated"></span>
+	</div>
+	<div id="msg"></div>
+	<div id="lanes">
+		<section class="swimlane active" data-lane="in_progress">
+			<div class="swimlane-header"><span class="row-toggle" aria-hidden="true"></span><h3 class="swimlane-title">In Progress <span class="lane-count" data-lane-count="in_progress">(0)</span></h3></div>
+			<div class="lane-cards" data-lane-cards="in_progress"></div>
+		</section>
+		<section class="swimlane done" data-lane="done">
+			<div class="swimlane-header"><span class="row-toggle" aria-hidden="true"></span><h3 class="swimlane-title">Done <span class="lane-count" data-lane-count="done">(0)</span></h3></div>
+			<div class="lane-cards" data-lane-cards="done"></div>
+		</section>
+	</div>
+	<script>
+		const META = {"ok":true,"error":"","exportPath":"/Users/tom/dev/agenthippo-vscode/.agent-hippo/analytics/views/live-fleet-2/exports/live-fleet-2.json","cliActive":true,"daemonHint":false,"daemonCommand":"node .agent-hippo/analytics/views/live-fleet-2/scripts/live-fleet-2-daemon.mjs"};
+		const POLL_MS = 5000;
+		let DATA = { generatedAt: '', totals: {}, sessions: [] };
+		const laneCollapsed = { in_progress: false, done: false };
+
+		function esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+		function postToHost(payload) {
+			const msg = Object.assign({ source: 'agentide-wow-widget' }, payload);
+			try {
+				const api = typeof acquireVsCodeApi === 'function' ? acquireVsCodeApi() : null;
+				if (api) { api.postMessage(msg); return; }
+			} catch (e) {}
+			try { window.parent.postMessage(msg, '*'); } catch (e) {}
+		}
+		function postRefresh() {
+			postToHost({ type: 'refreshWidget', script: 'live-fleet-2-widget.cjs' });
+		}
+		function requestSnapshot() {
+			postToHost({ type: 'requestViewExportSnapshot' });
+		}
+		function postOpen(session) {
+			postToHost({
+				type: 'openSpotlightForSession',
+				sessionId: String(session.sessionId || ''),
+				channelType: 'none',
+				channelTarget: '',
+			});
+		}
+		function filtered() {
+			const q = String(document.getElementById('search').value || '').trim().toLowerCase();
+			const status = String(document.getElementById('status-filter').value || '').trim();
+			return (DATA.sessions || []).filter((s) => {
+				if (status && String(s.status || '') !== status) return false;
+				if (!q) return true;
+				const hay = [s.sessionId, s.taskTitle, s.engine, s.model, s.workspaceRoot].join(' ').toLowerCase();
+				return hay.includes(q);
+			});
+		}
+		function renderSummary() {
+			const t = DATA.totals || {};
+			const kpis = [
+				['Sessions', t.sessions || 0],
+				['In progress', t.inProgress || 0],
+				['Done', t.done || 0],
+				['Turns', t.turns || 0],
+			];
+			const summary = document.getElementById('summary');
+			const existing = summary.querySelectorAll('.kpi');
+			kpis.forEach(([label, value], index) => {
+				let el = existing[index];
+				if (!el) {
+					el = document.createElement('div');
+					el.className = 'kpi';
+					el.innerHTML = '<div class="label"></div><div class="value"></div>';
+					summary.appendChild(el);
+				}
+				el.querySelector('.label').textContent = label;
+				el.querySelector('.value').textContent = String(value);
+			});
+			while (summary.children.length > kpis.length) {
+				summary.lastElementChild.remove();
+			}
+			const updated = document.getElementById('updated');
+			updated.textContent = 'Updated ' + (DATA.generatedAt || '—') + (META.cliActive ? ' · CLI active' : '');
+		}
+		function renderCardElement(session) {
+			const status = String(session.status || 'done');
+			const title = esc(session.taskTitle || session.sessionId || 'Session');
+			const card = document.createElement('div');
+			card.className = 'card';
+			card.setAttribute('data-session-id', String(session.sessionId || ''));
+			card.innerHTML =
+				'<div><span class="badge ' + esc(status) + '">' + (status === 'in_progress' ? 'In Progress' : 'Done') + '</span></div>' +
+				'<div class="title" title="' + title + '">' + title + '</div>' +
+				'<div class="sub">' + esc(session.engine || '—') + ' · ' + esc(session.model || '—') + ' · ' + esc(session.turns || 0) + ' turns</div>' +
+				'<div class="sub">' + esc(session.sessionId || '') + '</div>';
+			return card;
+		}
+		function updateCardElement(card, session) {
+			const status = String(session.status || 'done');
+			const title = esc(session.taskTitle || session.sessionId || 'Session');
+			const badge = card.querySelector('.badge');
+			if (badge) {
+				badge.className = 'badge ' + esc(status);
+				badge.textContent = status === 'in_progress' ? 'In Progress' : 'Done';
+			}
+			const titleEl = card.querySelector('.title');
+			if (titleEl) {
+				titleEl.textContent = session.taskTitle || session.sessionId || 'Session';
+				titleEl.setAttribute('title', title);
+			}
+			const subs = card.querySelectorAll('.sub');
+			if (subs[0]) {
+				subs[0].textContent = (session.engine || '—') + ' · ' + (session.model || '—') + ' · ' + (session.turns || 0) + ' turns';
+			}
+			if (subs[1]) {
+				subs[1].textContent = String(session.sessionId || '');
+			}
+		}
+		function syncLaneCards(container, sessions) {
+			const wantIds = sessions.map((s) => String(s.sessionId || ''));
+			const existingById = new Map();
+			container.querySelectorAll('.card[data-session-id]').forEach((card) => {
+				existingById.set(card.getAttribute('data-session-id') || '', card);
+			});
+			for (const [id, card] of existingById) {
+				if (!id || !wantIds.includes(id)) {
+					card.remove();
+				}
+			}
+			const empty = container.querySelector('.empty');
+			if (!sessions.length) {
+				container.classList.add('lane-empty');
+				if (!empty) {
+					const placeholder = document.createElement('div');
+					placeholder.className = 'empty';
+					placeholder.textContent = 'No sessions';
+					container.appendChild(placeholder);
+				}
+				return;
+			}
+			container.classList.remove('lane-empty');
+			if (empty) {
+				empty.remove();
+			}
+			let anchor = null;
+			for (const session of sessions) {
+				const id = String(session.sessionId || '');
+				let card = existingById.get(id);
+				if (!card) {
+					card = renderCardElement(session);
+					container.appendChild(card);
+				} else {
+					updateCardElement(card, session);
+				}
+				const next = anchor ? anchor.nextElementSibling : container.firstElementChild;
+				if (card !== next) {
+					container.insertBefore(card, anchor ? anchor.nextSibling : container.firstChild);
+				}
+				anchor = card;
+			}
+		}
+		function applyLaneVisibility() {
+			const statusFilter = String(document.getElementById('status-filter').value || '').trim();
+			for (const lane of ['in_progress', 'done']) {
+				const row = document.querySelector('.swimlane[data-lane="' + lane + '"]');
+				const container = document.querySelector('[data-lane-cards="' + lane + '"]');
+				if (!row || !container) continue;
+				const isEmpty = container.classList.contains('lane-empty');
+				if (statusFilter && statusFilter !== lane) {
+					row.style.display = 'none';
+					continue;
+				}
+				row.style.display = '';
+				if (isEmpty) {
+					laneCollapsed[lane] = true;
+					row.classList.add('collapsed');
+				} else {
+					row.classList.toggle('collapsed', !!laneCollapsed[lane]);
+				}
+			}
+		}
+		function renderLanes() {
+			const items = filtered();
+			const lanes = { in_progress: [], done: [] };
+			items.forEach((s) => {
+				const st = String(s.status || 'done');
+				(lanes[st] || lanes.done).push(s);
+			});
+			for (const lane of ['in_progress', 'done']) {
+				const list = lanes[lane] || [];
+				const countEl = document.querySelector('[data-lane-count="' + lane + '"]');
+				if (countEl) {
+					countEl.textContent = '(' + list.length + ')';
+				}
+				const container = document.querySelector('[data-lane-cards="' + lane + '"]');
+				if (container) {
+					syncLaneCards(container, list);
+				}
+			}
+			applyLaneVisibility();
+		}
+		function applySnapshot(payload, meta) {
+			if (payload && typeof payload === 'object') {
+				DATA = {
+					generatedAt: payload.generatedAt || '',
+					totals: payload.totals || {},
+					sessions: Array.isArray(payload.sessions) ? payload.sessions : [],
+				};
+			}
+			if (meta && typeof meta === 'object') {
+				Object.assign(META, meta);
+			}
+			renderSummary();
+			renderLanes();
+			const msgEl = document.getElementById('msg');
+			const daemonCmd = META.daemonCommand || 'node live-fleet-2-daemon.mjs';
+			if (!META.ok) {
+				msgEl.textContent = 'Snapshot: ' + (META.error || 'missing — run: ' + daemonCmd + ' (or click Refresh)');
+			} else if (!META.daemonHint) {
+				msgEl.textContent = 'Tip: run: ' + daemonCmd + ' (background updates every ' + (POLL_MS / 1000) + 's)';
+			} else {
+				msgEl.textContent = '';
+			}
+		}
+		document.getElementById('search').addEventListener('input', renderLanes);
+		document.getElementById('status-filter').addEventListener('change', renderLanes);
+		document.getElementById('refresh-btn').addEventListener('click', postRefresh);
+		document.getElementById('lanes').addEventListener('click', (e) => {
+			const header = e.target.closest('.swimlane-header');
+			if (header) {
+				const row = header.closest('.swimlane');
+				if (!row) return;
+				const lane = row.getAttribute('data-lane');
+				if (!lane) return;
+				laneCollapsed[lane] = !laneCollapsed[lane];
+				row.classList.toggle('collapsed', laneCollapsed[lane]);
+				return;
+			}
+			const card = e.target.closest('.card');
+			if (!card) return;
+			const sid = card.getAttribute('data-session-id');
+			const session = (DATA.sessions || []).find((s) => String(s.sessionId) === sid);
+			if (session) postOpen(session);
+		});
+		window.addEventListener('message', (e) => {
+			const d = e.data;
+			if (!d || typeof d !== 'object') return;
+			if (d.type !== 'viewExportSnapshot' && d.type !== 'liveFleetSnapshot') return;
+			applySnapshot(d.payload, d.meta);
+		});
+		requestSnapshot();
+		setInterval(requestSnapshot, POLL_MS);
+	</script>
+</body>
+</html>
