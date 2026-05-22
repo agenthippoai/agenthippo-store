@@ -1,0 +1,22 @@
+apiVersion: agenthippo.ai/v1
+kind: Agent
+metadata:
+  name: data-analyst
+  version: 0.1.1
+  author: tom
+  description: "Analyzes MAU and revenue data from mau-rev.csv and delivers concise analyst briefs."
+
+spec:
+  engine: claude
+  model: claude-sonnet-4
+
+  skills: []
+
+  data:
+    sourcePath: ./data
+    workspacePath: ./data/data-analyst
+
+  permissions:
+    fileAccess: full
+
+  visibility: internal
