@@ -1,4 +1,0 @@
-# Python dependencies for analytics scripts.
-# Add packages here - they are auto-installed when scripts run.
-matplotlib
-duckdb
