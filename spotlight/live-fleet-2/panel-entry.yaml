@@ -1,5 +1,5 @@
 id: live-fleet-2
 name: Live Fleet 2
-scope: workspace
+scope: global
 scripts:
   - live-fleet-2-widget.cjs
