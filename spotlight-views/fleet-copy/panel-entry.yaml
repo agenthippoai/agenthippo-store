@@ -1,5 +1,0 @@
-id: fleet-copy
-name: Fleet Copy
-scope: global
-scripts:
-  - agent-fleet-widget.js

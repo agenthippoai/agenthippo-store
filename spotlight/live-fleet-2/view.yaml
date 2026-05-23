@@ -1,0 +1,12 @@
+version: 1.0.1
+id: live-fleet-2
+name: Live Fleet 2
+scope: global
+scripts:
+  - live-fleet-2-widget.cjs
+description: Real-time agent fleet from session JSONL, workspace context dirs, and CLI hints
+author: agenthippo
+tags:
+  - spotlight
+  - fleet
+  - live
