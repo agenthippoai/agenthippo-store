@@ -15,7 +15,7 @@ on:
       - 'skills/**'
       - 'mcp/**'
       - 'engines/**'
-      - 'spotlight-views/**'
+      - 'spotlight/**'
       - 'scripts/build-index.ts'
       - 'package.json'
       - '.github/workflows/build-index.yml'
