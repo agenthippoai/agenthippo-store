@@ -1,0 +1,5 @@
+id: star-visualizer
+name: Star Visualizer
+scope: workspace
+scripts:
+  - star-data-widget.js
