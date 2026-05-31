@@ -1,0 +1,5 @@
+id: live-fleet-4
+name: Live Fleet 4
+scope: workspace
+scripts:
+  - live-fleet-4-widget.cjs

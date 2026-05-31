@@ -1,0 +1,15 @@
+version: 1.0.0
+id: live-fleet-4
+name: Live Fleet 4
+scope: workspace
+scripts:
+  - live-fleet-4-widget.cjs
+description: Workflow pipeline view — live updates via generic viewExportSnapshot passthrough (Option B)
+author: agenthippo
+tags:
+  - spotlight
+  - fleet
+  - live
+  - team
+  - workflow
+publishBundle: full
