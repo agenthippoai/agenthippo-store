@@ -1,0 +1,29 @@
+apiVersion: agenthippo.ai/v1
+kind: Agent
+metadata:
+  name: star-visualizer
+  version: 0.1.0
+  author: tom
+  description: "Loads CSV files from the data folder and builds interactive Spotlight charts for star history and tabular metrics."
+  tags:
+    - data
+    - visualization
+    - spotlight
+    - csv
+    - github-stars
+
+spec:
+  engine: claude
+  model: claude-sonnet-4
+
+  skills:
+    - path: ./skills/star-data-viz
+
+  data:
+    sourcePath: ./data
+    workspacePath: ./data
+
+  permissions:
+    fileAccess: full
+
+  visibility: internal
