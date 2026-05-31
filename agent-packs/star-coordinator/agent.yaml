@@ -1,0 +1,29 @@
+apiVersion: agenthippo.ai/v1
+kind: Agent
+metadata:
+  name: star-coordinator
+  version: 0.1.0
+  author: tom
+  description: "Coordinates github-star and star-visualizer to collect GitHub star history and visualize it in Spotlight."
+  tags:
+    - github
+    - stars
+    - coordinator
+    - spotlight
+    - multi-agent
+
+spec:
+  engine: claude
+  model: claude-sonnet-4
+
+  skills:
+    - path: ./skills/star-pipeline
+
+  data:
+    sourcePath: ./data
+    workspacePath: ./data/github-star
+
+  permissions:
+    fileAccess: full
+
+  visibility: internal
