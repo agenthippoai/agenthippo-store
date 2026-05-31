@@ -87,6 +87,8 @@ export interface Runtime {
 		error(msg: string): void;
 		debug(msg: string): void;
 	};
+	/** Drop cached in-process engine module (AgentHippo custom engine host). */
+	invalidateEngineInstance?: () => void;
 }
 
 export interface AgentEngine {
