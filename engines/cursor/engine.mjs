@@ -14,6 +14,9 @@ import { fileURLToPath } from 'node:url';
 
 const CURSOR_API_KEY_ENV = 'CURSOR_API_KEY';
 
+/** Env keys forwarded from AgentHippo into the Cursor SDK shell subprocess. */
+const FORWARDED_ENV_PREFIXES = ['AGENTHIPPO_', 'AGENTIDE_', 'OPENCLAW_'];
+
 const SDK_PACKAGE = '@cursor/sdk';
 const ENGINE_DIR = path.dirname(fileURLToPath(import.meta.url));
 const ACTIVE_SESSION_IDLE_TTL_MS = 1000 * 60 * 30;
@@ -63,6 +66,37 @@ function prependPath(dir) {
 	if (!current.split(sep).includes(dir)) {
 		process.env.PATH = `${dir}${sep}${current}`;
 	}
+}
+
+/**
+ * @param {Record<string, string | undefined>} turnEnv
+ * @returns {() => void}
+ */
+function applyTurnEnvToProcess(turnEnv) {
+	const previous = new Map();
+	for (const [key, value] of Object.entries(turnEnv)) {
+		if (typeof value !== 'string' || !value.trim()) {
+			continue;
+		}
+		if (!FORWARDED_ENV_PREFIXES.some((prefix) => key.startsWith(prefix))) {
+			continue;
+		}
+		previous.set(key, process.env[key]);
+		process.env[key] = value;
+	}
+	return () => {
+		for (const [key, value] of previous) {
+			if (value === undefined) {
+				delete process.env[key];
+			} else {
+				process.env[key] = value;
+			}
+		}
+	};
+}
+
+function resetSdkModuleCache() {
+	sdkPromise = undefined;
 }
 
 async function loadSdk() {
@@ -215,15 +249,30 @@ export class CursorSdkEngine {
 	 * @param {import('./engine-contract.d.ts').CustomEngineTurn} turn
 	 */
 	async run(turn) {
-		const { emitter, runtime, signal } = turn;
-		const apiKey = resolveApiKey(turn);
-		if (!apiKey) {
-			runtime.logger.warn('[Cursor SDK] Skipping run: missing or invalid CURSOR_API_KEY');
-			await emitter.text(formatMissingCursorApiKeyMessage());
-			await emitter.done();
-			return { nativeSessionId: turn.session.nativeSessionId };
-		}
+		const restoreProcessEnv = applyTurnEnvToProcess(turn.env ?? {});
+		try {
+			const apiKey = resolveApiKey(turn);
+			if (!apiKey) {
+				turn.runtime.logger.warn('[Cursor SDK] Skipping run: missing or invalid CURSOR_API_KEY');
+				await turn.emitter.text(formatMissingCursorApiKeyMessage());
+				await turn.emitter.done();
+				return { nativeSessionId: turn.session.nativeSessionId };
+			}
 
+			// A failed run is recovered by the host recycling this worker process (fresh SDK),
+			// so the engine just surfaces the error instead of attempting in-process recovery.
+			return await this.#runOnce(turn, apiKey);
+		} finally {
+			restoreProcessEnv();
+		}
+	}
+
+	/**
+	 * @param {import('./engine-contract.d.ts').CustomEngineTurn} turn
+	 * @param {string} apiKey
+	 */
+	async #runOnce(turn, apiKey) {
+		const { emitter, runtime, signal } = turn;
 		const { Agent, CursorAgentError } = await loadSdk();
 		ensureRipgrepOnPath(turn);
 		const apiKeyHash = createHash('sha256').update(apiKey).digest('hex');
@@ -234,11 +283,10 @@ export class CursorSdkEngine {
 		};
 
 		let state = this.#sessions.get(turn.session.key);
-		if (!state) {
-			state = await this.#openAgent(Agent, CursorAgentError, turn, apiKey, model, local, apiKeyHash);
-			this.#sessions.set(turn.session.key, state);
-		} else if (state.apiKeyHash !== apiKeyHash) {
-			await this.#disposeAgent(state.agent);
+		if (!state || state.apiKeyHash !== apiKeyHash) {
+			if (state) {
+				await this.#disposeAgent(state.agent);
+			}
 			state = await this.#openAgent(Agent, CursorAgentError, turn, apiKey, model, local, apiKeyHash);
 			this.#sessions.set(turn.session.key, state);
 		}
@@ -248,7 +296,9 @@ export class CursorSdkEngine {
 		let sawAssistantText = false;
 		let run;
 		try {
-			run = await state.agent.send(turn.message, { model });
+			// force: expire any run left wedged by a prior aborted/crashed turn so a
+			// stopped-then-resent message doesn't fail with "already has active run".
+			run = await state.agent.send(turn.message, { model, local: { force: true } });
 		} catch (err) {
 			if (err instanceof CursorAgentError) {
 				throw new Error(`Cursor SDK startup failed: ${err.message}`);
@@ -256,8 +306,10 @@ export class CursorSdkEngine {
 			throw err;
 		}
 
+		/** @type {Promise<void> | undefined} */
+		let cancelPromise;
 		const onAbort = () => {
-			void (async () => {
+			cancelPromise = (async () => {
 				try {
 					if (run.supports('cancel')) {
 						await run.cancel();
@@ -285,6 +337,9 @@ export class CursorSdkEngine {
 			}
 
 			if (signal?.aborted) {
+				// Wait for the cancellation to land so the agent isn't left with an
+				// active run; otherwise the next message hits "already has active run".
+				await cancelPromise;
 				throw new Error('Cursor SDK run aborted');
 			}
 
@@ -314,6 +369,13 @@ export class CursorSdkEngine {
 		state.nativeSessionId = state.agent.agentId;
 		await emitter.done();
 		return { nativeSessionId: state.nativeSessionId };
+	}
+
+	async #disposeAllSessions() {
+		for (const state of this.#sessions.values()) {
+			await this.#disposeAgent(state.agent);
+		}
+		this.#sessions.clear();
 	}
 
 	/**
@@ -370,9 +432,7 @@ export class CursorSdkEngine {
 	}
 
 	dispose() {
-		for (const state of this.#sessions.values()) {
-			void this.#disposeAgent(state.agent);
-		}
-		this.#sessions.clear();
+		void this.#disposeAllSessions();
+		resetSdkModuleCache();
 	}
 }
