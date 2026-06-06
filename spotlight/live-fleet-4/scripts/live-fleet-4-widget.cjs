@@ -9,15 +9,12 @@ const { SNAPSHOT_FILE, collect, writeSnapshot } = require('./live-fleet-4-collec
 
 const OUTPUT_HTML = 'live-fleet-4.html';
 const POLL_MS = 15000;
-const SHELL_VERSION = 12;
+const DAEMON_POLL_MS = 2500;
+const SHELL_VERSION = 14;
 
 function resolveDaemonCommand() {
 	const daemonPath = path.join(__dirname, 'live-fleet-4-daemon.mjs');
-	const startPath = path.join(process.env.AGENTIDE_WORKSPACE_ROOT || process.cwd(), '.agent-hippo/scripts/start-live-fleet-4.sh');
 	const workspaceRoot = (process.env.AGENTIDE_WORKSPACE_ROOT || '').trim();
-	if (fs.existsSync(startPath)) {
-		return `bash ${path.relative(workspaceRoot || process.cwd(), startPath).split(path.sep).join('/')}`;
-	}
 	if (workspaceRoot) {
 		const rel = path.relative(workspaceRoot, daemonPath);
 		if (rel && !rel.startsWith('..') && !path.isAbsolute(rel)) {
@@ -25,6 +22,22 @@ function resolveDaemonCommand() {
 		}
 	}
 	return `node ${daemonPath}`;
+}
+
+function isDaemonRunning(exportDir) {
+	if (process.env.LIVE_FLEET_DAEMON === '1') {
+		return true;
+	}
+	try {
+		const pid = parseInt(fs.readFileSync(path.join(exportDir, 'live-fleet-4-daemon.pid'), 'utf8').trim(), 10);
+		if (!Number.isFinite(pid) || pid <= 0) {
+			return false;
+		}
+		process.kill(pid, 0);
+		return true;
+	} catch {
+		return false;
+	}
 }
 
 function writeIfChanged(filePath, content) {
@@ -61,7 +74,8 @@ function buildShellHtml(meta, initialPayload) {
 #controls{display:flex;gap:8px;align-items:center;padding:8px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap}
 #controls input{background:#0b1220;color:var(--text);border:1px solid #334155;border-radius:6px;padding:6px 10px;flex:1;min-width:140px;max-width:280px}
 .btn{background:#1e3a5f;color:#93c5fd;border:1px solid #3b82f6;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:12px}
-#msg{padding:6px 16px;color:#fbbf24;font-size:11px;min-height:16px}
+#msg{padding:8px 16px;color:#fbbf24;font-size:11px;min-height:16px;background:rgba(251,191,36,.08);border-bottom:1px solid rgba(251,191,36,.22)}
+#msg:empty{display:none;min-height:0;padding:0;border-bottom:none}
 #updated{margin-left:auto;color:var(--muted);font-size:11px}
 #lanes{padding:12px 16px 24px;display:flex;flex-direction:column;gap:14px}
 .lane{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:rgba(15,23,42,.5)}
@@ -109,12 +123,12 @@ function buildShellHtml(meta, initialPayload) {
 </head>
 <body data-fleet-snapshot-shell="1">
 <div id="header"><h1><span class="live-dot" id="live-dot"></span>Live Fleet 4</h1><p>Real-time multi-agent workflows — in-place updates, no iframe flicker</p></div>
+<div id="msg"></div>
 <div id="summary"></div>
 <div id="controls">
   <input id="search" type="search" placeholder="Filter workflows…" />
   <span id="updated"></span>
 </div>
-<div id="msg"></div>
 <div id="lanes">
   <section class="lane running" data-lane="running"><div class="lane-head"><span class="lane-toggle"></span><h3 class="lane-title">Running <span class="lane-count" data-count="running">(0)</span></h3></div><div class="lane-body" data-lane-body="running"></div></section>
   <section class="lane finished" data-lane="finished"><div class="lane-head"><span class="lane-toggle"></span><h3 class="lane-title">Finished <span class="lane-count" data-count="finished">(0)</span></h3></div><div class="lane-body" data-lane-body="finished"></div></section>
@@ -123,6 +137,7 @@ function buildShellHtml(meta, initialPayload) {
 const META = ${metaJson};
 const INITIAL = ${initialJson};
 const POLL_MS = ${POLL_MS};
+const DAEMON_POLL_MS = ${DAEMON_POLL_MS};
 let DATA = normalizePayload(INITIAL);
 const laneCollapsed = { running: false, finished: false };
 try{
@@ -271,18 +286,26 @@ function renderLanes(){
   for(const lane of ['running','finished']){
     document.querySelector('.lane[data-lane="'+lane+'"]').classList.toggle('collapsed',!!laneCollapsed[lane]);
   }
-  const msgEl=document.getElementById('msg');
-  const t=DATA.totals||{};
-  const live=((t.running||0)>0)||(DATA.diagnostics&&DATA.diagnostics.cliActive);
-  if(!META.daemonHint&&!live){
-    msgEl.textContent='Tip: run '+ (META.daemonCommand||'start-live-fleet-4.sh') +' for background refresh every '+ (POLL_MS/1000) +'s';
-  }else{msgEl.textContent='';}
 }
-function renderAll(){preserveScroll(function(){renderSummary();renderLanes();});}
-function applySnapshot(payload){
-  if(!payload||typeof payload!=='object')return;
+function renderDaemonMsg(){
+  const msgEl=document.getElementById('msg');
+  if(!msgEl)return;
+  const daemonCmd=META.daemonCommand||'node .agent-hippo/analytics/views/live-fleet-4/scripts/live-fleet-4-daemon.mjs';
+  const pollSec=DAEMON_POLL_MS/1000;
+  if(!META.ok){
+    msgEl.textContent='Snapshot: '+(META.error||'missing — run: '+daemonCmd);
+  }else if(!META.daemonHint){
+    msgEl.textContent='Tip: run: '+daemonCmd+' (background updates every '+pollSec+'s)';
+  }else{
+    msgEl.textContent='';
+  }
+}
+function renderAll(){preserveScroll(function(){renderSummary();renderLanes();renderDaemonMsg();});}
+function applySnapshot(payload,meta){
+  if(meta&&typeof meta==='object'){Object.assign(META,meta);}
+  if(!payload||typeof payload!=='object'){renderDaemonMsg();return;}
   const key=snapshotKey(payload);
-  if(key===lastSnapshotKey)return;
+  if(key===lastSnapshotKey){renderDaemonMsg();return;}
   lastSnapshotKey=key;
   const prevGeneratedAt=DATA.generatedAt||'';
   DATA=normalizePayload(payload);
@@ -307,7 +330,7 @@ window.addEventListener('message',(e)=>{
   const d=e.data;
   if(!d||typeof d!=='object')return;
   if(d.type!=='viewExportSnapshot'&&d.type!=='liveFleetSnapshot')return;
-  applySnapshot(d.payload);
+  applySnapshot(d.payload,d.meta);
 });
 if(META.exportRel&&window.location.protocol==='file:'){
   const pollExport=function(){
@@ -344,6 +367,7 @@ function readSnapshot(exportDir) {
 		return {
 			ok: isEnoent,
 			exportPath,
+			error: error instanceof Error ? error.message : String(error),
 			payload: { generatedAt: new Date().toISOString(), totals: {}, running: [], finished: [], history: [], workflows: [] },
 		};
 	}
@@ -378,8 +402,9 @@ function main() {
 
 	const shellMeta = {
 		ok: snapshot.ok,
+		error: snapshot.error || '',
 		exportRel: '../exports/' + SNAPSHOT_FILE,
-		daemonHint: Boolean(process.env.LIVE_FLEET_DAEMON),
+		daemonHint: isDaemonRunning(exportDir),
 		daemonCommand: resolveDaemonCommand(),
 		workspaceRoot: process.env.AGENTIDE_WORKSPACE_ROOT || process.cwd(),
 	};

@@ -1,5 +1,5 @@
 <!doctype html>
-<html data-live-fleet-shell="12">
+<html data-live-fleet-shell="14">
 <head>
 <meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Live Fleet 4 — Workflows</title>
@@ -18,7 +18,8 @@
 #controls{display:flex;gap:8px;align-items:center;padding:8px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap}
 #controls input{background:#0b1220;color:var(--text);border:1px solid #334155;border-radius:6px;padding:6px 10px;flex:1;min-width:140px;max-width:280px}
 .btn{background:#1e3a5f;color:#93c5fd;border:1px solid #3b82f6;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:12px}
-#msg{padding:6px 16px;color:#fbbf24;font-size:11px;min-height:16px}
+#msg{padding:8px 16px;color:#fbbf24;font-size:11px;min-height:16px;background:rgba(251,191,36,.08);border-bottom:1px solid rgba(251,191,36,.22)}
+#msg:empty{display:none;min-height:0;padding:0;border-bottom:none}
 #updated{margin-left:auto;color:var(--muted);font-size:11px}
 #lanes{padding:12px 16px 24px;display:flex;flex-direction:column;gap:14px}
 .lane{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:rgba(15,23,42,.5)}
@@ -66,20 +67,21 @@
 </head>
 <body data-fleet-snapshot-shell="1">
 <div id="header"><h1><span class="live-dot" id="live-dot"></span>Live Fleet 4</h1><p>Real-time multi-agent workflows — in-place updates, no iframe flicker</p></div>
+<div id="msg"></div>
 <div id="summary"></div>
 <div id="controls">
   <input id="search" type="search" placeholder="Filter workflows…" />
   <span id="updated"></span>
 </div>
-<div id="msg"></div>
 <div id="lanes">
   <section class="lane running" data-lane="running"><div class="lane-head"><span class="lane-toggle"></span><h3 class="lane-title">Running <span class="lane-count" data-count="running">(0)</span></h3></div><div class="lane-body" data-lane-body="running"></div></section>
   <section class="lane finished" data-lane="finished"><div class="lane-head"><span class="lane-toggle"></span><h3 class="lane-title">Finished <span class="lane-count" data-count="finished">(0)</span></h3></div><div class="lane-body" data-lane-body="finished"></div></section>
 </div>
 <script>
-const META = {"ok":true,"exportRel":"../exports/live-fleet-4.json","daemonHint":false,"daemonCommand":"bash .agent-hippo/scripts/start-live-fleet-4.sh","workspaceRoot":"/Users/tom/dev/agenthippo-vscode"};
+const META = {"ok":true,"error":"","exportRel":"../exports/live-fleet-4.json","daemonHint":false,"daemonCommand":"node .agent-hippo/analytics/views/live-fleet-4/scripts/live-fleet-4-daemon.mjs","workspaceRoot":"/Users/tom/dev/agenthippo-vscode"};
 const INITIAL = {"generatedAt":"","totals":{},"running":[],"finished":[],"history":[],"workflows":[]};
 const POLL_MS = 15000;
+const DAEMON_POLL_MS = 2500;
 let DATA = normalizePayload(INITIAL);
 const laneCollapsed = { running: false, finished: false };
 try{
@@ -228,18 +230,26 @@ function renderLanes(){
   for(const lane of ['running','finished']){
     document.querySelector('.lane[data-lane="'+lane+'"]').classList.toggle('collapsed',!!laneCollapsed[lane]);
   }
-  const msgEl=document.getElementById('msg');
-  const t=DATA.totals||{};
-  const live=((t.running||0)>0)||(DATA.diagnostics&&DATA.diagnostics.cliActive);
-  if(!META.daemonHint&&!live){
-    msgEl.textContent='Tip: run '+ (META.daemonCommand||'start-live-fleet-4.sh') +' for background refresh every '+ (POLL_MS/1000) +'s';
-  }else{msgEl.textContent='';}
 }
-function renderAll(){preserveScroll(function(){renderSummary();renderLanes();});}
-function applySnapshot(payload){
-  if(!payload||typeof payload!=='object')return;
+function renderDaemonMsg(){
+  const msgEl=document.getElementById('msg');
+  if(!msgEl)return;
+  const daemonCmd=META.daemonCommand||'node .agent-hippo/analytics/views/live-fleet-4/scripts/live-fleet-4-daemon.mjs';
+  const pollSec=DAEMON_POLL_MS/1000;
+  if(!META.ok){
+    msgEl.textContent='Snapshot: '+(META.error||'missing — run: '+daemonCmd);
+  }else if(!META.daemonHint){
+    msgEl.textContent='Tip: run: '+daemonCmd+' (background updates every '+pollSec+'s)';
+  }else{
+    msgEl.textContent='';
+  }
+}
+function renderAll(){preserveScroll(function(){renderSummary();renderLanes();renderDaemonMsg();});}
+function applySnapshot(payload,meta){
+  if(meta&&typeof meta==='object'){Object.assign(META,meta);}
+  if(!payload||typeof payload!=='object'){renderDaemonMsg();return;}
   const key=snapshotKey(payload);
-  if(key===lastSnapshotKey)return;
+  if(key===lastSnapshotKey){renderDaemonMsg();return;}
   lastSnapshotKey=key;
   const prevGeneratedAt=DATA.generatedAt||'';
   DATA=normalizePayload(payload);
@@ -264,7 +274,7 @@ window.addEventListener('message',(e)=>{
   const d=e.data;
   if(!d||typeof d!=='object')return;
   if(d.type!=='viewExportSnapshot'&&d.type!=='liveFleetSnapshot')return;
-  applySnapshot(d.payload);
+  applySnapshot(d.payload,d.meta);
 });
 if(META.exportRel&&window.location.protocol==='file:'){
   const pollExport=function(){
