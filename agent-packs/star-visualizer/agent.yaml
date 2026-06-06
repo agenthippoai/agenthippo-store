@@ -13,7 +13,7 @@ metadata:
     - github-stars
 
 spec:
-  engine: claude
+  engine: codex
   model: claude-sonnet-4
 
   skills:
