@@ -1,20 +1,126 @@
 {
-  "generatedAt": "2026-05-31T10:04:43.651Z",
+  "generatedAt": "2026-06-02T19:30:46.932Z",
   "source": "live-fleet-4",
   "totals": {
-    "workflows": 6,
+    "workflows": 8,
     "running": 0,
-    "finished": 6,
-    "history": 6,
+    "finished": 8,
+    "history": 8,
     "inProgress": 0,
-    "done": 6,
-    "stepsTotal": 17,
-    "stepsDone": 17,
+    "done": 8,
+    "stepsTotal": 22,
+    "stepsDone": 22,
     "stepsActive": 0
   },
   "running": [],
   "finished": [],
   "history": [
+    {
+      "workflowId": "star-pipeline",
+      "runId": "20260602-193036",
+      "title": "GitHub Star Pipeline",
+      "subtitle": "pytorch/torchtitan",
+      "status": "done",
+      "kind": "history",
+      "startedAt": "2026-06-02T19:30:36Z",
+      "updatedAt": "2026-06-02T19:30:46Z",
+      "finishedAt": "2026-06-02T19:30:46Z",
+      "archivedAt": "2026-06-02T19:30:46Z",
+      "artifact": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260602-193036.json",
+      "orchestrator": {
+        "agent": "star-coordinator",
+        "label": "Star Coordinator",
+        "status": "done",
+        "summary": "Pipeline complete for pytorch/torchtitan (30 days)"
+      },
+      "steps": [
+        {
+          "step": 2,
+          "role": "worker",
+          "agent": "github-star",
+          "label": "Collect 30-day stars",
+          "status": "done",
+          "summary": "CSV: agenthippo-pytorch-torchtitan-star-history.csv (31 lines, 119 new stars)",
+          "startedAt": "2026-06-02T19:30:36Z",
+          "finishedAt": "2026-06-02T19:30:46Z",
+          "artifact": "/Users/tom/dev/agenthippo-vscode/data/github-star/agenthippo-pytorch-torchtitan-star-history.csv",
+          "color": "#38bdf8"
+        },
+        {
+          "step": 3,
+          "role": "worker",
+          "agent": "star-visualizer",
+          "label": "Plot star history",
+          "status": "done",
+          "summary": "Purple 30-day chart for pytorch/torchtitan",
+          "startedAt": "2026-06-02T19:30:46Z",
+          "finishedAt": "2026-06-02T19:30:46Z",
+          "artifact": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/analytics/views/star-visualizer/charts/star-data-widget.html",
+          "color": "#a78bfa"
+        }
+      ],
+      "workspaceRoot": "/Users/tom/dev/agenthippo-vscode",
+      "sourcePath": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260602-193036.json"
+    },
+    {
+      "workflowId": "star-pipeline",
+      "runId": "20260602-192301",
+      "title": "GitHub Star Pipeline",
+      "subtitle": "pytorch/pytorch",
+      "status": "done",
+      "kind": "history",
+      "startedAt": "2026-06-02T19:23:01Z",
+      "updatedAt": "2026-06-02T19:23:22Z",
+      "finishedAt": "2026-06-02T19:23:22Z",
+      "archivedAt": "2026-06-02T19:23:22Z",
+      "artifact": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260602-192301.json",
+      "orchestrator": {
+        "agent": "star-coordinator",
+        "label": "Star Coordinator",
+        "status": "done",
+        "summary": "Pipeline complete for pytorch/pytorch (30 days)"
+      },
+      "steps": [
+        {
+          "step": 1,
+          "role": "worker",
+          "agent": "joker1",
+          "label": "Warm-up joke",
+          "status": "done",
+          "summary": "Why did PyTorch break up with TensorFlow? Too many dimensions to their relationship.",
+          "startedAt": "2026-06-02T19:23:01Z",
+          "finishedAt": "2026-06-02T19:23:01Z",
+          "artifact": "",
+          "color": "#fbbf24"
+        },
+        {
+          "step": 2,
+          "role": "worker",
+          "agent": "github-star",
+          "label": "Collect 30-day stars",
+          "status": "done",
+          "summary": "CSV: agenthippo-pytorch-pytorch-star-history.csv (31 lines, 938 new stars)",
+          "startedAt": "2026-06-02T19:23:01Z",
+          "finishedAt": "2026-06-02T19:23:22Z",
+          "artifact": "/Users/tom/dev/agenthippo-vscode/data/github-star/agenthippo-pytorch-pytorch-star-history.csv",
+          "color": "#38bdf8"
+        },
+        {
+          "step": 3,
+          "role": "worker",
+          "agent": "star-visualizer",
+          "label": "Plot star history",
+          "status": "done",
+          "summary": "Purple 30-day chart for pytorch/pytorch",
+          "startedAt": "2026-06-02T19:23:22Z",
+          "finishedAt": "2026-06-02T19:23:22Z",
+          "artifact": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/analytics/views/star-visualizer/charts/star-data-widget.html",
+          "color": "#a78bfa"
+        }
+      ],
+      "workspaceRoot": "/Users/tom/dev/agenthippo-vscode",
+      "sourcePath": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260602-192301.json"
+    },
     {
       "workflowId": "star-pipeline",
       "runId": "20260531-100357",
@@ -326,6 +432,112 @@
     }
   ],
   "workflows": [
+    {
+      "workflowId": "star-pipeline",
+      "runId": "20260602-193036",
+      "title": "GitHub Star Pipeline",
+      "subtitle": "pytorch/torchtitan",
+      "status": "done",
+      "kind": "history",
+      "startedAt": "2026-06-02T19:30:36Z",
+      "updatedAt": "2026-06-02T19:30:46Z",
+      "finishedAt": "2026-06-02T19:30:46Z",
+      "archivedAt": "2026-06-02T19:30:46Z",
+      "artifact": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260602-193036.json",
+      "orchestrator": {
+        "agent": "star-coordinator",
+        "label": "Star Coordinator",
+        "status": "done",
+        "summary": "Pipeline complete for pytorch/torchtitan (30 days)"
+      },
+      "steps": [
+        {
+          "step": 2,
+          "role": "worker",
+          "agent": "github-star",
+          "label": "Collect 30-day stars",
+          "status": "done",
+          "summary": "CSV: agenthippo-pytorch-torchtitan-star-history.csv (31 lines, 119 new stars)",
+          "startedAt": "2026-06-02T19:30:36Z",
+          "finishedAt": "2026-06-02T19:30:46Z",
+          "artifact": "/Users/tom/dev/agenthippo-vscode/data/github-star/agenthippo-pytorch-torchtitan-star-history.csv",
+          "color": "#38bdf8"
+        },
+        {
+          "step": 3,
+          "role": "worker",
+          "agent": "star-visualizer",
+          "label": "Plot star history",
+          "status": "done",
+          "summary": "Purple 30-day chart for pytorch/torchtitan",
+          "startedAt": "2026-06-02T19:30:46Z",
+          "finishedAt": "2026-06-02T19:30:46Z",
+          "artifact": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/analytics/views/star-visualizer/charts/star-data-widget.html",
+          "color": "#a78bfa"
+        }
+      ],
+      "workspaceRoot": "/Users/tom/dev/agenthippo-vscode",
+      "sourcePath": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260602-193036.json"
+    },
+    {
+      "workflowId": "star-pipeline",
+      "runId": "20260602-192301",
+      "title": "GitHub Star Pipeline",
+      "subtitle": "pytorch/pytorch",
+      "status": "done",
+      "kind": "history",
+      "startedAt": "2026-06-02T19:23:01Z",
+      "updatedAt": "2026-06-02T19:23:22Z",
+      "finishedAt": "2026-06-02T19:23:22Z",
+      "archivedAt": "2026-06-02T19:23:22Z",
+      "artifact": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260602-192301.json",
+      "orchestrator": {
+        "agent": "star-coordinator",
+        "label": "Star Coordinator",
+        "status": "done",
+        "summary": "Pipeline complete for pytorch/pytorch (30 days)"
+      },
+      "steps": [
+        {
+          "step": 1,
+          "role": "worker",
+          "agent": "joker1",
+          "label": "Warm-up joke",
+          "status": "done",
+          "summary": "Why did PyTorch break up with TensorFlow? Too many dimensions to their relationship.",
+          "startedAt": "2026-06-02T19:23:01Z",
+          "finishedAt": "2026-06-02T19:23:01Z",
+          "artifact": "",
+          "color": "#fbbf24"
+        },
+        {
+          "step": 2,
+          "role": "worker",
+          "agent": "github-star",
+          "label": "Collect 30-day stars",
+          "status": "done",
+          "summary": "CSV: agenthippo-pytorch-pytorch-star-history.csv (31 lines, 938 new stars)",
+          "startedAt": "2026-06-02T19:23:01Z",
+          "finishedAt": "2026-06-02T19:23:22Z",
+          "artifact": "/Users/tom/dev/agenthippo-vscode/data/github-star/agenthippo-pytorch-pytorch-star-history.csv",
+          "color": "#38bdf8"
+        },
+        {
+          "step": 3,
+          "role": "worker",
+          "agent": "star-visualizer",
+          "label": "Plot star history",
+          "status": "done",
+          "summary": "Purple 30-day chart for pytorch/pytorch",
+          "startedAt": "2026-06-02T19:23:22Z",
+          "finishedAt": "2026-06-02T19:23:22Z",
+          "artifact": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/analytics/views/star-visualizer/charts/star-data-widget.html",
+          "color": "#a78bfa"
+        }
+      ],
+      "workspaceRoot": "/Users/tom/dev/agenthippo-vscode",
+      "sourcePath": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260602-192301.json"
+    },
     {
       "workflowId": "star-pipeline",
       "runId": "20260531-100357",
@@ -641,6 +853,6 @@
       "/Users/tom/dev/agenthippo-vscode"
     ],
     "cliActive": true,
-    "workflowCount": 6
+    "workflowCount": 8
   }
 }
