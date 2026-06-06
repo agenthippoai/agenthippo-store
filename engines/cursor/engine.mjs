@@ -21,7 +21,7 @@ const SDK_PACKAGE = '@cursor/sdk';
 const ENGINE_DIR = path.dirname(fileURLToPath(import.meta.url));
 const ACTIVE_SESSION_IDLE_TTL_MS = 1000 * 60 * 30;
 
-/** @type {Promise<{ Agent: typeof import('@cursor/sdk').Agent, CursorAgentError: typeof import('@cursor/sdk').CursorAgentError }> | undefined} */
+/** @type {Promise<{ Agent: typeof import('@cursor/sdk').Agent, CursorAgentError: typeof import('@cursor/sdk').CursorAgentError, AgentBusyError: typeof import('@cursor/sdk').AgentBusyError }> | undefined} */
 let sdkPromise;
 
 function platformToolsDir() {
@@ -104,6 +104,7 @@ async function loadSdk() {
 		sdkPromise = import(SDK_PACKAGE).then((mod) => ({
 			Agent: mod.Agent,
 			CursorAgentError: mod.CursorAgentError,
+			AgentBusyError: mod.AgentBusyError,
 		})).catch((err) => {
 			sdkPromise = undefined;
 			throw new Error(
@@ -183,23 +184,48 @@ function toJson(value) {
 }
 
 /**
+ * Cursor's run.stream() re-emits assistant/thinking messages as growing
+ * cumulative snapshots, but emitter.text/thinking expect deltas. Return only
+ * the new suffix so consumers (e.g. the Slack gateway, which appends each
+ * delta) don't repost the whole message every time it grows. A non-prefix
+ * `next` means the snapshot reset (new segment) — emit it whole.
+ * @param {string} previous
+ * @param {string} next
+ */
+function deltaSuffix(previous, next) {
+	return next.startsWith(previous) ? next.slice(previous.length) : next;
+}
+
+/**
+ * @typedef {{ assistantText: string, thinkingText: string }} StreamDedupeState
+ */
+
+/**
  * @param {import('@cursor/sdk').SDKMessage} event
  * @param {import('./engine-contract.d.ts').Emitter} emitter
  * @param {Set<string>} openToolCalls
+ * @param {StreamDedupeState} dedupe
  */
-async function mapStreamEvent(event, emitter, openToolCalls) {
+async function mapStreamEvent(event, emitter, openToolCalls, dedupe) {
 	switch (event.type) {
 		case 'assistant': {
-			for (const block of event.message.content ?? []) {
-				if (block.type === 'text' && typeof block.text === 'string' && block.text) {
-					await emitter.text(block.text);
-				}
+			const fullText = (event.message.content ?? [])
+				.map((block) => (block.type === 'text' && typeof block.text === 'string' ? block.text : ''))
+				.join('');
+			const delta = deltaSuffix(dedupe.assistantText, fullText);
+			dedupe.assistantText = fullText;
+			if (delta) {
+				await emitter.text(delta);
 			}
 			return;
 		}
 		case 'thinking': {
 			if (typeof event.text === 'string' && event.text) {
-				await emitter.thinking(event.text);
+				const delta = deltaSuffix(dedupe.thinkingText, event.text);
+				dedupe.thinkingText = event.text;
+				if (delta) {
+					await emitter.thinking(delta);
+				}
 			}
 			return;
 		}
@@ -273,7 +299,7 @@ export class CursorSdkEngine {
 	 */
 	async #runOnce(turn, apiKey) {
 		const { emitter, runtime, signal } = turn;
-		const { Agent, CursorAgentError } = await loadSdk();
+		const { Agent, CursorAgentError, AgentBusyError } = await loadSdk();
 		ensureRipgrepOnPath(turn);
 		const apiKeyHash = createHash('sha256').update(apiKey).digest('hex');
 		const model = { id: turn.modelId };
@@ -293,12 +319,11 @@ export class CursorSdkEngine {
 		state.lastUsedAt = Date.now();
 
 		const openToolCalls = new Set();
-		let sawAssistantText = false;
+		/** @type {StreamDedupeState} */
+		const dedupe = { assistantText: '', thinkingText: '' };
 		let run;
 		try {
-			// force: expire any run left wedged by a prior aborted/crashed turn so a
-			// stopped-then-resent message doesn't fail with "already has active run".
-			run = await state.agent.send(turn.message, { model, local: { force: true } });
+			run = await this.#sendWithBusyRecovery(state.agent, turn, model, AgentBusyError);
 		} catch (err) {
 			if (err instanceof CursorAgentError) {
 				throw new Error(`Cursor SDK startup failed: ${err.message}`);
@@ -326,14 +351,7 @@ export class CursorSdkEngine {
 				if (signal?.aborted) {
 					break;
 				}
-				if (event.type === 'assistant') {
-					for (const block of event.message.content ?? []) {
-						if (block.type === 'text' && typeof block.text === 'string' && block.text) {
-							sawAssistantText = true;
-						}
-					}
-				}
-				await mapStreamEvent(event, emitter, openToolCalls);
+				await mapStreamEvent(event, emitter, openToolCalls, dedupe);
 			}
 
 			if (signal?.aborted) {
@@ -359,7 +377,7 @@ export class CursorSdkEngine {
 				throw new Error('Cursor SDK run cancelled');
 			}
 
-			if (!sawAssistantText && typeof result.result === 'string' && result.result.trim()) {
+			if (!dedupe.assistantText && typeof result.result === 'string' && result.result.trim()) {
 				await emitter.text(result.result);
 			}
 		} finally {
@@ -369,6 +387,70 @@ export class CursorSdkEngine {
 		state.nativeSessionId = state.agent.agentId;
 		await emitter.done();
 		return { nativeSessionId: state.nativeSessionId };
+	}
+
+	/**
+	 * Start the turn's run, recovering from an agent left with an active run.
+	 *
+	 * `local.force` expires a *persisted* run that a crashed CLI left wedged, but
+	 * a genuinely in-flight run (e.g. a resumed agent whose prior process is still
+	 * streaming, or a stopped-then-resent message before cancel landed) still
+	 * trips `AgentBusyError` (409). In that case, cancel the agent's active local
+	 * run(s) and retry the send once.
+	 *
+	 * @param {import('@cursor/sdk').SDKAgent} agent
+	 * @param {import('./engine-contract.d.ts').CustomEngineTurn} turn
+	 * @param {{ id: string }} model
+	 * @param {typeof import('@cursor/sdk').AgentBusyError} AgentBusyError
+	 * @returns {Promise<import('@cursor/sdk').Run>}
+	 */
+	async #sendWithBusyRecovery(agent, turn, model, AgentBusyError) {
+		const sendOptions = { model, local: { force: true } };
+		try {
+			return await agent.send(turn.message, sendOptions);
+		} catch (err) {
+			if (!(err instanceof AgentBusyError)) {
+				throw err;
+			}
+			turn.runtime.logger.warn(
+				`[Cursor SDK] Agent ${agent.agentId} busy with an active run; cancelling and retrying`,
+			);
+			await this.#cancelActiveRuns(agent.agentId, turn);
+			return await agent.send(turn.message, sendOptions);
+		}
+	}
+
+	/**
+	 * Cancel any still-running local runs for an agent so a follow-up send can
+	 * start. Best effort — failures are logged, not thrown, so the retry still
+	 * runs (with `force`) and surfaces the real error if it still fails.
+	 *
+	 * @param {string} agentId
+	 * @param {import('./engine-contract.d.ts').CustomEngineTurn} turn
+	 */
+	async #cancelActiveRuns(agentId, turn) {
+		const { Agent } = await loadSdk();
+		const opts = /** @type {const} */ ({ runtime: 'local', cwd: turn.workspaceRoot });
+		try {
+			const { items } = await Agent.listRuns(agentId, opts);
+			for (const run of items) {
+				if (run.status !== 'running') {
+					continue;
+				}
+				try {
+					await Agent.cancelRun(run.id, opts);
+					turn.runtime.logger.info(`[Cursor SDK] Cancelled active run ${run.id} for agent ${agentId}`);
+				} catch (cancelErr) {
+					turn.runtime.logger.warn(
+						`[Cursor SDK] Failed to cancel run ${run.id}: ${cancelErr instanceof Error ? cancelErr.message : String(cancelErr)}`,
+					);
+				}
+			}
+		} catch (err) {
+			turn.runtime.logger.warn(
+				`[Cursor SDK] Could not list runs for agent ${agentId}: ${err instanceof Error ? err.message : String(err)}`,
+			);
+		}
 	}
 
 	async #disposeAllSessions() {
