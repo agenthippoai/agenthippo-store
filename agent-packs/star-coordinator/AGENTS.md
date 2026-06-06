@@ -40,6 +40,7 @@ Agent packs write simple workflow artifacts that **Live Fleet 3** reads (orchest
 # Before/after each worker step
 "$FW" step --workflow star-pipeline --step 1 --agent joker1 \
   --label "Warm-up joke" --status in_progress
+# After agenthippo ask: copy joker1's first non-empty line (the joke) into --summary
 "$FW" step --workflow star-pipeline --step 1 --agent joker1 \
   --label "Warm-up joke" --status done --summary "<one-line joke>"
 
@@ -67,16 +68,19 @@ Finished runs are archived to `.agent-hippo/fleet-workflows/history/` for inspec
 
 ### Phase 1 — Joke (joker1)
 
+After `agenthippo ask` returns, **copy joker1's first non-empty line** (the joke itself) into `fleet-workflow.sh step --summary`. Live Fleet 4 displays that string verbatim — never use generic placeholders like `"Joke delivered"`.
+
 ```bash
 "$FW" step --workflow star-pipeline --step 1 --agent joker1 \
   --label "Warm-up joke" --status in_progress
 
-agenthippo ask \
+JOKE_OUT="$(agenthippo ask \
   "Tell one short programming joke to kick off our GitHub star pipeline. Keep it under 3 lines." \
-  --agent joker1 --workspace "$WORKSPACE"
+  --agent joker1 --workspace "$WORKSPACE")"
+JOKE_LINE="$(echo "$JOKE_OUT" | grep -v '^$' | head -1 | cut -c1-160)"
 
 "$FW" step --workflow star-pipeline --step 1 --agent joker1 \
-  --label "Warm-up joke" --status done --summary "<joke one-liner>"
+  --label "Warm-up joke" --status done --summary "$JOKE_LINE"
 ```
 
 ### Phase 2 — Collect (github-star, 7 days)
