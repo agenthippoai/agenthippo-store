@@ -1,5 +1,5 @@
 # joker1 Agent Manifest
-apiVersion: agentide.io/v1
+apiVersion: agenthippo.ai/v1
 kind: Agent
 metadata:
   name: joker1
