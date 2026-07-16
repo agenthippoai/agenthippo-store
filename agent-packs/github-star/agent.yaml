@@ -1,0 +1,29 @@
+apiVersion: agenthippo.ai/v1
+kind: Agent
+metadata:
+  name: github-star
+  version: 0.2.0
+  author: tom
+  description: "Collects last-30-day GitHub star history into a strict 2-column agenthippo-*.csv (explicit repo; token from ~/.agent-hippo/.env)."
+  tags:
+    - github
+    - stars
+    - analytics
+    - csv
+    - open-data
+
+spec:
+  engine: claude
+  model: claude-sonnet-4
+
+  skills:
+    - path: ./skills/github-star-history
+
+  data:
+    sourcePath: ./data
+    workspacePath: ./data/github-star
+
+  permissions:
+    fileAccess: full
+
+  visibility: internal

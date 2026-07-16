@@ -14,11 +14,14 @@ import { fileURLToPath } from 'node:url';
 
 const CURSOR_API_KEY_ENV = 'CURSOR_API_KEY';
 
+/** Env keys forwarded from AgentHippo into the Cursor SDK shell subprocess. */
+const FORWARDED_ENV_PREFIXES = ['AGENTHIPPO_', 'AGENTIDE_', 'OPENCLAW_'];
+
 const SDK_PACKAGE = '@cursor/sdk';
 const ENGINE_DIR = path.dirname(fileURLToPath(import.meta.url));
 const ACTIVE_SESSION_IDLE_TTL_MS = 1000 * 60 * 30;
 
-/** @type {Promise<{ Agent: typeof import('@cursor/sdk').Agent, CursorAgentError: typeof import('@cursor/sdk').CursorAgentError }> | undefined} */
+/** @type {Promise<{ Agent: typeof import('@cursor/sdk').Agent, CursorAgentError: typeof import('@cursor/sdk').CursorAgentError, AgentBusyError: typeof import('@cursor/sdk').AgentBusyError }> | undefined} */
 let sdkPromise;
 
 function platformToolsDir() {
@@ -65,11 +68,43 @@ function prependPath(dir) {
 	}
 }
 
+/**
+ * @param {Record<string, string | undefined>} turnEnv
+ * @returns {() => void}
+ */
+function applyTurnEnvToProcess(turnEnv) {
+	const previous = new Map();
+	for (const [key, value] of Object.entries(turnEnv)) {
+		if (typeof value !== 'string' || !value.trim()) {
+			continue;
+		}
+		if (!FORWARDED_ENV_PREFIXES.some((prefix) => key.startsWith(prefix))) {
+			continue;
+		}
+		previous.set(key, process.env[key]);
+		process.env[key] = value;
+	}
+	return () => {
+		for (const [key, value] of previous) {
+			if (value === undefined) {
+				delete process.env[key];
+			} else {
+				process.env[key] = value;
+			}
+		}
+	};
+}
+
+function resetSdkModuleCache() {
+	sdkPromise = undefined;
+}
+
 async function loadSdk() {
 	if (!sdkPromise) {
 		sdkPromise = import(SDK_PACKAGE).then((mod) => ({
 			Agent: mod.Agent,
 			CursorAgentError: mod.CursorAgentError,
+			AgentBusyError: mod.AgentBusyError,
 		})).catch((err) => {
 			sdkPromise = undefined;
 			throw new Error(
@@ -149,23 +184,48 @@ function toJson(value) {
 }
 
 /**
+ * Cursor's run.stream() re-emits assistant/thinking messages as growing
+ * cumulative snapshots, but emitter.text/thinking expect deltas. Return only
+ * the new suffix so consumers (e.g. the Slack gateway, which appends each
+ * delta) don't repost the whole message every time it grows. A non-prefix
+ * `next` means the snapshot reset (new segment) — emit it whole.
+ * @param {string} previous
+ * @param {string} next
+ */
+function deltaSuffix(previous, next) {
+	return next.startsWith(previous) ? next.slice(previous.length) : next;
+}
+
+/**
+ * @typedef {{ assistantText: string, thinkingText: string }} StreamDedupeState
+ */
+
+/**
  * @param {import('@cursor/sdk').SDKMessage} event
  * @param {import('./engine-contract.d.ts').Emitter} emitter
  * @param {Set<string>} openToolCalls
+ * @param {StreamDedupeState} dedupe
  */
-async function mapStreamEvent(event, emitter, openToolCalls) {
+async function mapStreamEvent(event, emitter, openToolCalls, dedupe) {
 	switch (event.type) {
 		case 'assistant': {
-			for (const block of event.message.content ?? []) {
-				if (block.type === 'text' && typeof block.text === 'string' && block.text) {
-					await emitter.text(block.text);
-				}
+			const fullText = (event.message.content ?? [])
+				.map((block) => (block.type === 'text' && typeof block.text === 'string' ? block.text : ''))
+				.join('');
+			const delta = deltaSuffix(dedupe.assistantText, fullText);
+			dedupe.assistantText = fullText;
+			if (delta) {
+				await emitter.text(delta);
 			}
 			return;
 		}
 		case 'thinking': {
 			if (typeof event.text === 'string' && event.text) {
-				await emitter.thinking(event.text);
+				const delta = deltaSuffix(dedupe.thinkingText, event.text);
+				dedupe.thinkingText = event.text;
+				if (delta) {
+					await emitter.thinking(delta);
+				}
 			}
 			return;
 		}
@@ -215,16 +275,31 @@ export class CursorSdkEngine {
 	 * @param {import('./engine-contract.d.ts').CustomEngineTurn} turn
 	 */
 	async run(turn) {
-		const { emitter, runtime, signal } = turn;
-		const apiKey = resolveApiKey(turn);
-		if (!apiKey) {
-			runtime.logger.warn('[Cursor SDK] Skipping run: missing or invalid CURSOR_API_KEY');
-			await emitter.text(formatMissingCursorApiKeyMessage());
-			await emitter.done();
-			return { nativeSessionId: turn.session.nativeSessionId };
-		}
+		const restoreProcessEnv = applyTurnEnvToProcess(turn.env ?? {});
+		try {
+			const apiKey = resolveApiKey(turn);
+			if (!apiKey) {
+				turn.runtime.logger.warn('[Cursor SDK] Skipping run: missing or invalid CURSOR_API_KEY');
+				await turn.emitter.text(formatMissingCursorApiKeyMessage());
+				await turn.emitter.done();
+				return { nativeSessionId: turn.session.nativeSessionId };
+			}
 
-		const { Agent, CursorAgentError } = await loadSdk();
+			// A failed run is recovered by the host recycling this worker process (fresh SDK),
+			// so the engine just surfaces the error instead of attempting in-process recovery.
+			return await this.#runOnce(turn, apiKey);
+		} finally {
+			restoreProcessEnv();
+		}
+	}
+
+	/**
+	 * @param {import('./engine-contract.d.ts').CustomEngineTurn} turn
+	 * @param {string} apiKey
+	 */
+	async #runOnce(turn, apiKey) {
+		const { emitter, runtime, signal } = turn;
+		const { Agent, CursorAgentError, AgentBusyError } = await loadSdk();
 		ensureRipgrepOnPath(turn);
 		const apiKeyHash = createHash('sha256').update(apiKey).digest('hex');
 		const model = { id: turn.modelId };
@@ -234,21 +309,21 @@ export class CursorSdkEngine {
 		};
 
 		let state = this.#sessions.get(turn.session.key);
-		if (!state) {
-			state = await this.#openAgent(Agent, CursorAgentError, turn, apiKey, model, local, apiKeyHash);
-			this.#sessions.set(turn.session.key, state);
-		} else if (state.apiKeyHash !== apiKeyHash) {
-			await this.#disposeAgent(state.agent);
+		if (!state || state.apiKeyHash !== apiKeyHash) {
+			if (state) {
+				await this.#disposeAgent(state.agent);
+			}
 			state = await this.#openAgent(Agent, CursorAgentError, turn, apiKey, model, local, apiKeyHash);
 			this.#sessions.set(turn.session.key, state);
 		}
 		state.lastUsedAt = Date.now();
 
 		const openToolCalls = new Set();
-		let sawAssistantText = false;
+		/** @type {StreamDedupeState} */
+		const dedupe = { assistantText: '', thinkingText: '' };
 		let run;
 		try {
-			run = await state.agent.send(turn.message, { model });
+			run = await this.#sendWithBusyRecovery(state.agent, turn, model, AgentBusyError);
 		} catch (err) {
 			if (err instanceof CursorAgentError) {
 				throw new Error(`Cursor SDK startup failed: ${err.message}`);
@@ -256,8 +331,10 @@ export class CursorSdkEngine {
 			throw err;
 		}
 
+		/** @type {Promise<void> | undefined} */
+		let cancelPromise;
 		const onAbort = () => {
-			void (async () => {
+			cancelPromise = (async () => {
 				try {
 					if (run.supports('cancel')) {
 						await run.cancel();
@@ -274,17 +351,13 @@ export class CursorSdkEngine {
 				if (signal?.aborted) {
 					break;
 				}
-				if (event.type === 'assistant') {
-					for (const block of event.message.content ?? []) {
-						if (block.type === 'text' && typeof block.text === 'string' && block.text) {
-							sawAssistantText = true;
-						}
-					}
-				}
-				await mapStreamEvent(event, emitter, openToolCalls);
+				await mapStreamEvent(event, emitter, openToolCalls, dedupe);
 			}
 
 			if (signal?.aborted) {
+				// Wait for the cancellation to land so the agent isn't left with an
+				// active run; otherwise the next message hits "already has active run".
+				await cancelPromise;
 				throw new Error('Cursor SDK run aborted');
 			}
 
@@ -304,7 +377,7 @@ export class CursorSdkEngine {
 				throw new Error('Cursor SDK run cancelled');
 			}
 
-			if (!sawAssistantText && typeof result.result === 'string' && result.result.trim()) {
+			if (!dedupe.assistantText && typeof result.result === 'string' && result.result.trim()) {
 				await emitter.text(result.result);
 			}
 		} finally {
@@ -314,6 +387,77 @@ export class CursorSdkEngine {
 		state.nativeSessionId = state.agent.agentId;
 		await emitter.done();
 		return { nativeSessionId: state.nativeSessionId };
+	}
+
+	/**
+	 * Start the turn's run, recovering from an agent left with an active run.
+	 *
+	 * `local.force` expires a *persisted* run that a crashed CLI left wedged, but
+	 * a genuinely in-flight run (e.g. a resumed agent whose prior process is still
+	 * streaming, or a stopped-then-resent message before cancel landed) still
+	 * trips `AgentBusyError` (409). In that case, cancel the agent's active local
+	 * run(s) and retry the send once.
+	 *
+	 * @param {import('@cursor/sdk').SDKAgent} agent
+	 * @param {import('./engine-contract.d.ts').CustomEngineTurn} turn
+	 * @param {{ id: string }} model
+	 * @param {typeof import('@cursor/sdk').AgentBusyError} AgentBusyError
+	 * @returns {Promise<import('@cursor/sdk').Run>}
+	 */
+	async #sendWithBusyRecovery(agent, turn, model, AgentBusyError) {
+		const sendOptions = { model, local: { force: true } };
+		try {
+			return await agent.send(turn.message, sendOptions);
+		} catch (err) {
+			if (!(err instanceof AgentBusyError)) {
+				throw err;
+			}
+			turn.runtime.logger.warn(
+				`[Cursor SDK] Agent ${agent.agentId} busy with an active run; cancelling and retrying`,
+			);
+			await this.#cancelActiveRuns(agent.agentId, turn);
+			return await agent.send(turn.message, sendOptions);
+		}
+	}
+
+	/**
+	 * Cancel any still-running local runs for an agent so a follow-up send can
+	 * start. Best effort — failures are logged, not thrown, so the retry still
+	 * runs (with `force`) and surfaces the real error if it still fails.
+	 *
+	 * @param {string} agentId
+	 * @param {import('./engine-contract.d.ts').CustomEngineTurn} turn
+	 */
+	async #cancelActiveRuns(agentId, turn) {
+		const { Agent } = await loadSdk();
+		const opts = /** @type {const} */ ({ runtime: 'local', cwd: turn.workspaceRoot });
+		try {
+			const { items } = await Agent.listRuns(agentId, opts);
+			for (const run of items) {
+				if (run.status !== 'running') {
+					continue;
+				}
+				try {
+					await Agent.cancelRun(run.id, opts);
+					turn.runtime.logger.info(`[Cursor SDK] Cancelled active run ${run.id} for agent ${agentId}`);
+				} catch (cancelErr) {
+					turn.runtime.logger.warn(
+						`[Cursor SDK] Failed to cancel run ${run.id}: ${cancelErr instanceof Error ? cancelErr.message : String(cancelErr)}`,
+					);
+				}
+			}
+		} catch (err) {
+			turn.runtime.logger.warn(
+				`[Cursor SDK] Could not list runs for agent ${agentId}: ${err instanceof Error ? err.message : String(err)}`,
+			);
+		}
+	}
+
+	async #disposeAllSessions() {
+		for (const state of this.#sessions.values()) {
+			await this.#disposeAgent(state.agent);
+		}
+		this.#sessions.clear();
 	}
 
 	/**
@@ -370,9 +514,7 @@ export class CursorSdkEngine {
 	}
 
 	dispose() {
-		for (const state of this.#sessions.values()) {
-			void this.#disposeAgent(state.agent);
-		}
-		this.#sessions.clear();
+		void this.#disposeAllSessions();
+		resetSdkModuleCache();
 	}
 }

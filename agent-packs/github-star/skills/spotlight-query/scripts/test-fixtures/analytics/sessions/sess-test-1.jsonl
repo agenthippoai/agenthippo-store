@@ -1,0 +1,14 @@
+{"session_id":"sess-test-1","request_id":"req-001","event_type":"turn_start","timestamp":1700000000000,"payload":{"toolName":"","callId":"","isError":"false","success":"true"}}
+{"session_id":"sess-test-1","request_id":"req-001","event_type":"tool_start","timestamp":1700000000100,"payload":{"toolName":"Read","callId":"call-1","isError":"false","success":""}}
+{"session_id":"sess-test-1","request_id":"req-001","event_type":"tool_end","timestamp":1700000000200,"payload":{"toolName":"Read","callId":"call-1","isError":"false","success":""}}
+{"session_id":"sess-test-1","request_id":"req-001","event_type":"tool_start","timestamp":1700000000300,"payload":{"toolName":"Read","callId":"call-2","isError":"false","success":""}}
+{"session_id":"sess-test-1","request_id":"req-001","event_type":"tool_end","timestamp":1700000000400,"payload":{"toolName":"Read","callId":"call-2","isError":"false","success":""}}
+{"session_id":"sess-test-1","request_id":"req-001","event_type":"tool_start","timestamp":1700000000500,"payload":{"toolName":"Read","callId":"call-3","isError":"false","success":""}}
+{"session_id":"sess-test-1","request_id":"req-001","event_type":"tool_end","timestamp":1700000000600,"payload":{"toolName":"Read","callId":"call-3","isError":"false","success":""}}
+{"session_id":"sess-test-1","request_id":"req-001","event_type":"tool_start","timestamp":1700000000700,"payload":{"toolName":"Read","callId":"call-4","isError":"false","success":""}}
+{"session_id":"sess-test-1","request_id":"req-001","event_type":"tool_end","timestamp":1700000000800,"payload":{"toolName":"Read","callId":"call-4","isError":"false","success":""}}
+{"session_id":"sess-test-1","request_id":"req-001","event_type":"tool_start","timestamp":1700000000900,"payload":{"toolName":"Read","callId":"call-5","isError":"false","success":""}}
+{"session_id":"sess-test-1","request_id":"req-001","event_type":"tool_end","timestamp":1700000001000,"payload":{"toolName":"Read","callId":"call-5","isError":"false","success":""}}
+{"session_id":"sess-test-1","request_id":"req-001","event_type":"tool_start","timestamp":1700000001100,"payload":{"toolName":"Read","callId":"call-6","isError":"false","success":""}}
+{"session_id":"sess-test-1","request_id":"req-001","event_type":"tool_end","timestamp":1700000001200,"payload":{"toolName":"Read","callId":"call-6","isError":"true","success":""}}
+{"session_id":"sess-test-1","request_id":"req-001","event_type":"turn_end","timestamp":1700000001500,"payload":{"toolName":"","callId":"","isError":"false","success":"true"}}

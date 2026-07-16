@@ -8,7 +8,7 @@ metadata:
   description: always start your response with a joke
 
 spec:
-  engine: codex
+  engine: claude
   model: claude-sonnet-4-5-20250929
 
   skills: []
