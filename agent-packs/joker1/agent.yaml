@@ -3,7 +3,7 @@ apiVersion: agenthippo.ai/v1
 kind: Agent
 metadata:
   name: joker1
-  version: 0.1.0
+  version: 0.1.1
   author: trungn
   description: always start your response with a joke
 
