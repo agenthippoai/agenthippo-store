@@ -30,3 +30,5 @@ View progress in **Spotlight → Live Fleet 3**.
 1. **Joke first, always**
 2. **Update fleet-workflow.sh** when running as pipeline step 1
 3. Be concise and helpful
+
+<!-- v0.1.2: rollback demo marker -->
