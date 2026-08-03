@@ -36,11 +36,33 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Log in to GHCR
-        # The runtime image is org-private. GITHUB_TOKEN works only if the package grants this
-        # repo read access (Package settings -> Manage Actions access). If this step fails,
-        # add a PAT with read:packages as the GHCR_PULL_TOKEN secret and swap it in here.
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+      - name: Log in to GHCR and pull the runtime
+        # ghcr.io/agenthippoai/runtime is org-PRIVATE. GITHUB_TOKEN can only pull it if the
+        # package explicitly grants this repository read access, which it currently does NOT —
+        # the first run of this workflow failed with `Error response from daemon: denied`.
+        #
+        # Fix it one of two ways (either is a one-time action):
+        #   1. github.com/orgs/agenthippoai/packages/container/runtime/settings
+        #      -> Manage Actions access -> Add repository -> agenthippo-store (role: Read)
+        #   2. Add a PAT with read:packages as the GHCR_PULL_TOKEN secret in this repo.
+        #
+        # This step fails loudly rather than skipping. A verification job that quietly does
+        # nothing when it cannot fetch the verifier is worse than no job at all: it reports a
+        # green tick that means "we did not check", which is indistinguishable from "it passed".
+        env:
+          GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -n "${GHCR_PULL_TOKEN}" ]; then
+            echo "${GHCR_PULL_TOKEN}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          else
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          fi
+          if ! docker pull -q "$RUNTIME_IMAGE"; then
+            echo "::error::Cannot pull ${RUNTIME_IMAGE}. Pack signatures were NOT verified."
+            echo "::error::Grant agenthippo-store read access to the runtime package (Package settings -> Manage Actions access), or set a GHCR_PULL_TOKEN secret with read:packages."
+            exit 1
+          fi
 
       - name: Assemble the trust root (kid -> public PEM)
         env:
@@ -63,7 +85,6 @@ jobs:
       - name: Verify every pack that carries a signature
         run: |
           set -uo pipefail
-          docker pull -q "$RUNTIME_IMAGE"
           signed=0; unsigned=0; failed=0; unsigned_list=""
           for pack in agent-packs/*/; do
             name="$(basename "$pack")"

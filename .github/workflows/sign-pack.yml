@@ -53,7 +53,17 @@ jobs:
           [ -d "agent-packs/${PACK}" ] || { echo "::error::agent-packs/${PACK} does not exist"; exit 1; }
 
       - name: Log in to GHCR
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+        # See verify-packs.yml: the runtime package must grant this repo read access, or a
+        # GHCR_PULL_TOKEN secret (read:packages) must be set.
+        env:
+          GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -n "${GHCR_PULL_TOKEN}" ]; then
+            echo "${GHCR_PULL_TOKEN}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          else
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          fi
 
       - name: Sign
         env:
