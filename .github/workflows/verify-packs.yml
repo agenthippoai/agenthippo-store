@@ -34,7 +34,7 @@ jobs:
       # Pin. An unpinned runtime would silently change the digest rules under us.
       RUNTIME_IMAGE: ghcr.io/agenthippoai/runtime:1.110.9
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Log in to GHCR and pull the runtime
         # ghcr.io/agenthippoai/runtime is org-PRIVATE. GITHUB_TOKEN can only pull it if the

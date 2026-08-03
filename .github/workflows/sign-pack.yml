@@ -1,4 +1,4 @@
-# Sign an agent pack with the store release key and commit the resulting pack.sig.
+# Sign one or more agent packs with the store release key and commit the resulting pack.sig.
 #
 # MANUAL DISPATCH ONLY — READ BEFORE CHANGING THE TRIGGER
 # -------------------------------------------------------
@@ -8,9 +8,10 @@
 # edit, including a malicious one. The signature would then track HEAD, which git already does,
 # and the "refuse to load a modified pack" guarantee on every consumer would be worth zero.
 #
-# A human naming the pack and pressing Run is the point: it is the moment someone asserts
-# "this content is a release". Verify Pack Signatures then keeps that assertion honest on
-# every subsequent push.
+# A human naming the packs and pressing Run is the point: it is the moment someone asserts
+# "this content is a release". Accepting a LIST does not weaken that — the list is still
+# explicit and still typed by a person — but `all` does make it easy to assert release quality
+# over packs nobody has read. Prefer naming packs you have actually looked at.
 #
 # The private half is PACK_SIGNING_PRIVATE_PEM, scoped to the `release` ENVIRONMENT (see the
 # job below), not to the repository. Repo-wide it would be readable by any workflow anyone
@@ -28,7 +29,7 @@ on:
   workflow_dispatch:
     inputs:
       pack:
-        description: "Pack directory name under agent-packs/ (e.g. joker1)"
+        description: "Pack name(s) under agent-packs/, space- or comma-separated. Or 'all'."
         required: true
         type: string
 
@@ -39,31 +40,40 @@ permissions:
 jobs:
   sign:
     runs-on: ubuntu-latest
-    # PACK_SIGNING_PRIVATE_PEM is scoped to this environment, NOT to the repository. That is
-    # what makes signing a reviewed act instead of a side effect of push access: the job pauses
-    # here until a required reviewer approves, and the approval is recorded against the run.
-    # Repo-wide, the secret was readable by any workflow anyone could land — and a secret in a
-    # PUBLIC repo's Actions is exfiltratable by whoever can merge a workflow change, since log
-    # masking is defeated by base64/splitting. Scoping it does not stop a repo admin from
-    # editing the environment, so this is a higher bar, not a true trust boundary; the real
-    # boundary is a KMS/OIDC signer where no private key exists as a file at all.
+    # PACK_SIGNING_PRIVATE_PEM is scoped to this environment, not to the repository, so the job
+    # pauses for a required reviewer before the key is ever exposed to it and the approval is
+    # recorded against the run.
     environment: release
     env:
       RUNTIME_IMAGE: ghcr.io/agenthippoai/runtime:1.110.9
-      PACK: ${{ inputs.pack }}
+      PACK_INPUT: ${{ inputs.pack }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - name: Validate input
+      - name: Resolve and validate the pack list
+        id: list
         run: |
           set -euo pipefail
-          # The value is interpolated into paths and a docker -v argument; constrain it rather
-          # than trusting a dispatch input.
-          case "$PACK" in
-            *[!A-Za-z0-9._-]* | "" | .* )
-              echo "::error::invalid pack name: '${PACK}' (letters, digits, dot, underscore, hyphen; no leading dot)"; exit 1 ;;
-          esac
-          [ -d "agent-packs/${PACK}" ] || { echo "::error::agent-packs/${PACK} does not exist"; exit 1; }
+          if [ "$PACK_INPUT" = "all" ]; then
+            packs="$(find agent-packs -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort | tr '\n' ' ')"
+            echo "'all' expands to: ${packs}"
+          else
+            packs="$(printf '%s' "$PACK_INPUT" | tr ',' ' ')"
+          fi
+          resolved=""
+          for p in $packs; do
+            # Each name is interpolated into paths and a docker -v argument; constrain it
+            # rather than trusting a dispatch input.
+            case "$p" in
+              *[!A-Za-z0-9._-]* | "" | .* )
+                echo "::error::invalid pack name: '${p}' (letters, digits, dot, underscore, hyphen; no leading dot)"; exit 1 ;;
+            esac
+            [ -d "agent-packs/${p}" ] || { echo "::error::agent-packs/${p} does not exist"; exit 1; }
+            resolved="${resolved}${p} "
+          done
+          [ -n "$resolved" ] || { echo "::error::no packs resolved from input '${PACK_INPUT}'"; exit 1; }
+          echo "packs=${resolved}" >> "$GITHUB_OUTPUT"
+          echo "will process: ${resolved}"
 
       - name: Log in to GHCR
         # See verify-packs.yml: the runtime package must grant this repo read access, or a
@@ -77,96 +87,84 @@ jobs:
           else
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
           fi
+          docker pull -q "$RUNTIME_IMAGE"
 
-      - name: Decide whether signing is actually needed
-        id: need
-        env:
-          PACK_SIGNING_KID: ${{ vars.PACK_SIGNING_KID }}
-        run: |
-          set -euo pipefail
-          # `pack sign` stamps an `iat` into the JWT, so re-signing byte-identical content
-          # still produces a different pack.sig. A `git diff --quiet` guard therefore never
-          # fires, and every dispatch lands a churn commit that changes nothing anyone can
-          # verify differently. Compare what the signature ASSERTS instead: the content digest
-          # and the kid.
-          #
-          # kid is part of the comparison on purpose — re-signing unchanged content under a NEW
-          # key is exactly what key rotation is, and must not be skipped.
-          current="$(docker run --rm --user "$(id -u):$(id -g)" \
-            -v "$PWD/agent-packs/${PACK}:/pack:ro" "$RUNTIME_IMAGE" pack digest /pack \
-            | awk '{print $1}')"
-          echo "current digest: ${current}"
-          if [ -f "agent-packs/${PACK}/pack.sig" ]; then
-            read -r sig_digest sig_kid < <(python3 - "agent-packs/${PACK}/pack.sig" <<'PY'
-          import base64, json, sys
-          h, p, _ = open(sys.argv[1]).read().strip().split(".")
-          d = lambda s: json.loads(base64.urlsafe_b64decode(s + "=" * (-len(s) % 4)))
-          print(d(p).get("digest", ""), d(h).get("kid", ""))
-          PY
-          )
-            echo "signed digest : ${sig_digest} (kid ${sig_kid})"
-            if [ "$sig_digest" = "$current" ] && [ "$sig_kid" = "$PACK_SIGNING_KID" ]; then
-              echo "Already signed for this exact content under ${PACK_SIGNING_KID}. Nothing to do."
-              echo "needed=false" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
-          else
-            echo "no existing pack.sig"
-          fi
-          echo "needed=true" >> "$GITHUB_OUTPUT"
-
-      - name: Sign
-        if: steps.need.outputs.needed == 'true'
+      - name: Sign and verify each pack
         env:
           PACK_SIGNING_PRIVATE_PEM: ${{ secrets.PACK_SIGNING_PRIVATE_PEM }}
           PACK_SIGNING_KID: ${{ vars.PACK_SIGNING_KID }}
+          PACK_SIGNING_PUBLIC_PEM: ${{ vars.PACK_SIGNING_PUBLIC_PEM }}
+          PACKS: ${{ steps.list.outputs.packs }}
         run: |
           set -euo pipefail
-          if [ -z "${PACK_SIGNING_PRIVATE_PEM}" ] || [ -z "${PACK_SIGNING_KID}" ]; then
-            echo "::error::PACK_SIGNING_PRIVATE_PEM secret / PACK_SIGNING_KID variable not configured."
+          if [ -z "${PACK_SIGNING_PRIVATE_PEM}" ] || [ -z "${PACK_SIGNING_KID}" ] || [ -z "${PACK_SIGNING_PUBLIC_PEM}" ]; then
+            echo "::error::PACK_SIGNING_PRIVATE_PEM secret / PACK_SIGNING_KID / PACK_SIGNING_PUBLIC_PEM variables not configured."
             exit 1
           fi
           KEY="${RUNNER_TEMP}/pack-signing.pem"
           ( umask 077; printf '%s\n' "$PACK_SIGNING_PRIVATE_PEM" > "$KEY" )
-          docker pull -q "$RUNTIME_IMAGE"
-          echo "digest before signing:"
-          docker run --rm --user "$(id -u):$(id -g)" -v "$PWD/agent-packs/${PACK}:/pack:ro" "$RUNTIME_IMAGE" pack digest /pack
-          # --user: the image runs as uid 10001 (agent), but $KEY is 0600 owned by the runner.
-          # Without this the container cannot read its own key file -> EACCES. This is invisible
-          # on macOS, where Docker Desktop maps uids; it fails on every Linux host.
-          docker run --rm --user "$(id -u):$(id -g)" \
-            -v "$PWD/agent-packs/${PACK}:/pack" \
-            -v "$KEY:/key.pem:ro" \
-            "$RUNTIME_IMAGE" pack sign /pack --key /key.pem --kid "$PACK_SIGNING_KID"
-          rm -f "$KEY"
-
-      - name: Verify what we just produced
-        if: steps.need.outputs.needed == 'true'
-        env:
-          PACK_SIGNING_KID: ${{ vars.PACK_SIGNING_KID }}
-          PACK_SIGNING_PUBLIC_PEM: ${{ vars.PACK_SIGNING_PUBLIC_PEM }}
-        run: |
-          set -euo pipefail
-          # Never commit a signature we have not checked with the public half that consumers
-          # will actually use — that is the only thing proving the published key matches.
+          trap 'rm -f "$KEY"' EXIT
           python3 - <<'PY' > "${RUNNER_TEMP}/keys.json"
           import json, os
           print(json.dumps({os.environ["PACK_SIGNING_KID"]: os.environ["PACK_SIGNING_PUBLIC_PEM"]}))
           PY
-          docker run --rm --user "$(id -u):$(id -g)" \
-            -v "$PWD/agent-packs/${PACK}:/pack:ro" \
-            -v "${RUNNER_TEMP}/keys.json:/keys.json:ro" \
-            "$RUNTIME_IMAGE" pack verify /pack --keys /keys.json
 
-      - name: Commit pack.sig
-        if: steps.need.outputs.needed == 'true'
+          # --user on every docker run: the image runs as uid 10001 (agent), but $KEY is 0600
+          # owned by the runner. Without it the container cannot read its own key file and dies
+          # with EACCES. Invisible on macOS (Docker Desktop maps uids); fails on every Linux host.
+          U="$(id -u):$(id -g)"
+          signed=0; skipped=0
+          for p in $PACKS; do
+            echo "::group::${p}"
+            current="$(docker run --rm --user "$U" -v "$PWD/agent-packs/${p}:/pack:ro" \
+              "$RUNTIME_IMAGE" pack digest /pack | awk '{print $1}')"
+            sig_digest=""; sig_kid=""
+            if [ -f "agent-packs/${p}/pack.sig" ]; then
+              read -r sig_digest sig_kid < <(python3 - "agent-packs/${p}/pack.sig" <<'PY'
+          import base64, json, sys
+          h, pl, _ = open(sys.argv[1]).read().strip().split(".")
+          d = lambda s: json.loads(base64.urlsafe_b64decode(s + "=" * (-len(s) % 4)))
+          print(d(pl).get("digest", ""), d(h).get("kid", ""))
+          PY
+          )
+            fi
+            # `pack sign` stamps an `iat`, so re-signing identical content still yields
+            # different bytes and a `git diff` guard would never fire. Compare what the
+            # signature ASSERTS instead: content digest plus kid. kid is included on purpose —
+            # re-signing unchanged content under a NEW key is exactly what rotation is.
+            if [ "$sig_digest" = "$current" ] && [ "$sig_kid" = "$PACK_SIGNING_KID" ]; then
+              echo "already signed for ${current} under ${PACK_SIGNING_KID} — skipping"
+              skipped=$((skipped + 1))
+              echo "::endgroup::"
+              continue
+            fi
+            docker run --rm --user "$U" \
+              -v "$PWD/agent-packs/${p}:/pack" -v "$KEY:/key.pem:ro" \
+              "$RUNTIME_IMAGE" pack sign /pack --key /key.pem --kid "$PACK_SIGNING_KID"
+            # Never keep a signature we have not checked with the public half consumers will
+            # actually use — that is the only thing proving the published key matches.
+            docker run --rm --user "$U" \
+              -v "$PWD/agent-packs/${p}:/pack:ro" -v "${RUNNER_TEMP}/keys.json:/keys.json:ro" \
+              "$RUNTIME_IMAGE" pack verify /pack --keys /keys.json
+            signed=$((signed + 1))
+            echo "::endgroup::"
+          done
+          echo "signed: ${signed}   skipped (already current): ${skipped}"
+
+      - name: Commit signatures
         run: |
           set -euo pipefail
+          if git diff --quiet -- 'agent-packs/*/pack.sig' && [ -z "$(git ls-files --others --exclude-standard -- 'agent-packs/*/pack.sig')" ]; then
+            echo "No signature changed. Nothing to commit."
+            exit 0
+          fi
+          git add -A -- 'agent-packs/*/pack.sig'
+          changed="$(git diff --cached --name-only -- 'agent-packs/*/pack.sig' | sed 's|agent-packs/||; s|/pack.sig||' | tr '\n' ' ')"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "agent-packs/${PACK}/pack.sig"
-          git commit -m "${PACK}: re-sign with ${{ vars.PACK_SIGNING_KID }}
+          git commit -m "sign packs with ${{ vars.PACK_SIGNING_KID }}: ${changed}
 
-          Signed by the Sign Pack workflow, dispatched by @${{ github.actor }}.
-          Verified against the published public half before commit."
+          Signed by the Sign Pack workflow, dispatched by @${{ github.actor }} with input
+          '${{ inputs.pack }}'. Each signature was verified against the published public half
+          before commit."
           git push
