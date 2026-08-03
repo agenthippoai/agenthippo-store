@@ -1,0 +1,110 @@
+# Sign an agent pack with the store release key and commit the resulting pack.sig.
+#
+# MANUAL DISPATCH ONLY — READ BEFORE CHANGING THE TRIGGER
+# -------------------------------------------------------
+# It is tempting to run this on every push to agent-packs/**. Do not. A signature that is
+# automatically regenerated whenever the content changes attests nothing: it would have happily
+# re-signed commit 67acb69 (the edit that silently broke joker1's signature) and every future
+# edit, including a malicious one. The signature would then track HEAD, which git already does,
+# and the "refuse to load a modified pack" guarantee on every consumer would be worth zero.
+#
+# A human naming the pack and pressing Run is the point: it is the moment someone asserts
+# "this content is a release". Verify Pack Signatures then keeps that assertion honest on
+# every subsequent push.
+#
+# The private half lives in the PACK_SIGNING_PRIVATE_PEM repository secret. Note what that
+# means: anyone who can merge a workflow change to this PUBLIC repo can make CI sign arbitrary
+# content, so "can push to agenthippo-store" implies "can sign a store pack". That is an
+# acceptable trade for the threat this actually defends — a pack modified in transit, on a
+# mirror, or on a deploy host after release — but it is NOT protection against a malicious
+# maintainer. Restrict who can approve workflow changes accordingly.
+name: Sign Pack
+
+on:
+  workflow_dispatch:
+    inputs:
+      pack:
+        description: "Pack directory name under agent-packs/ (e.g. joker1)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  packages: read
+
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    env:
+      RUNTIME_IMAGE: ghcr.io/agenthippoai/runtime:1.110.9
+      PACK: ${{ inputs.pack }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate input
+        run: |
+          set -euo pipefail
+          # The value is interpolated into paths and a docker -v argument; constrain it rather
+          # than trusting a dispatch input.
+          case "$PACK" in
+            *[!A-Za-z0-9._-]* | "" | .* )
+              echo "::error::invalid pack name: '${PACK}' (letters, digits, dot, underscore, hyphen; no leading dot)"; exit 1 ;;
+          esac
+          [ -d "agent-packs/${PACK}" ] || { echo "::error::agent-packs/${PACK} does not exist"; exit 1; }
+
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Sign
+        env:
+          PACK_SIGNING_PRIVATE_PEM: ${{ secrets.PACK_SIGNING_PRIVATE_PEM }}
+          PACK_SIGNING_KID: ${{ vars.PACK_SIGNING_KID }}
+        run: |
+          set -euo pipefail
+          if [ -z "${PACK_SIGNING_PRIVATE_PEM}" ] || [ -z "${PACK_SIGNING_KID}" ]; then
+            echo "::error::PACK_SIGNING_PRIVATE_PEM secret / PACK_SIGNING_KID variable not configured."
+            exit 1
+          fi
+          KEY="${RUNNER_TEMP}/pack-signing.pem"
+          ( umask 077; printf '%s\n' "$PACK_SIGNING_PRIVATE_PEM" > "$KEY" )
+          docker pull -q "$RUNTIME_IMAGE"
+          echo "digest before signing:"
+          docker run --rm -v "$PWD/agent-packs/${PACK}:/pack:ro" "$RUNTIME_IMAGE" pack digest /pack
+          docker run --rm \
+            -v "$PWD/agent-packs/${PACK}:/pack" \
+            -v "$KEY:/key.pem:ro" \
+            "$RUNTIME_IMAGE" pack sign /pack --key /key.pem --kid "$PACK_SIGNING_KID"
+          rm -f "$KEY"
+
+      - name: Verify what we just produced
+        env:
+          PACK_SIGNING_KID: ${{ vars.PACK_SIGNING_KID }}
+          PACK_SIGNING_PUBLIC_PEM: ${{ vars.PACK_SIGNING_PUBLIC_PEM }}
+        run: |
+          set -euo pipefail
+          # Never commit a signature we have not checked with the public half that consumers
+          # will actually use — that is the only thing proving the published key matches.
+          python3 - <<'PY' > "${RUNNER_TEMP}/keys.json"
+          import json, os
+          print(json.dumps({os.environ["PACK_SIGNING_KID"]: os.environ["PACK_SIGNING_PUBLIC_PEM"]}))
+          PY
+          docker run --rm \
+            -v "$PWD/agent-packs/${PACK}:/pack:ro" \
+            -v "${RUNNER_TEMP}/keys.json:/keys.json:ro" \
+            "$RUNTIME_IMAGE" pack verify /pack --keys /keys.json
+
+      - name: Commit pack.sig
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- "agent-packs/${PACK}/pack.sig"; then
+            echo "pack.sig unchanged — content already matched the published signature. Nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "agent-packs/${PACK}/pack.sig"
+          git commit -m "${PACK}: re-sign with ${{ vars.PACK_SIGNING_KID }}
+
+          Signed by the Sign Pack workflow, dispatched by @${{ github.actor }}.
+          Verified against the published public half before commit."
+          git push

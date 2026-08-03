@@ -1,0 +1,96 @@
+# Verify agent-pack signatures.
+#
+# WHY THIS EXISTS
+# ---------------
+# joker1 shipped a broken signature from 2026-07-27 to 2026-08-03 and nothing noticed:
+# commit 67acb69 edited agent.yaml after "joker1 v0.1.2 — signed release" and did not re-sign,
+# so pack.sig attested a digest the pack no longer had. Every consumer running a fleet that
+# requires signatures would have refused to load it. Neither build-index.ts nor any other
+# workflow reads pack.sig, so the store had no way to catch that. This is that check.
+#
+# Verification runs inside the runtime image on purpose. The digest scope is a security
+# boundary (it covers .claude/, .codex/, .agent-hippo/ and .DS_Store, tags symlinks with an
+# `L:` prefix, and excludes pack.sig only at the pack root) and it changes between releases. A
+# second implementation here would drift and start passing packs serve rejects — which is worse
+# than no check, because it would be a green tick that means nothing.
+name: Verify Pack Signatures
+
+on:
+  push:
+    branches: [main]
+    paths: ["agent-packs/**"]
+  pull_request:
+    paths: ["agent-packs/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      # Pin. An unpinned runtime would silently change the digest rules under us.
+      RUNTIME_IMAGE: ghcr.io/agenthippoai/runtime:1.110.9
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        # The runtime image is org-private. GITHUB_TOKEN works only if the package grants this
+        # repo read access (Package settings -> Manage Actions access). If this step fails,
+        # add a PAT with read:packages as the GHCR_PULL_TOKEN secret and swap it in here.
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Assemble the trust root (kid -> public PEM)
+        env:
+          PACK_SIGNING_KID: ${{ vars.PACK_SIGNING_KID }}
+          PACK_SIGNING_PUBLIC_PEM: ${{ vars.PACK_SIGNING_PUBLIC_PEM }}
+        run: |
+          set -euo pipefail
+          if [ -z "${PACK_SIGNING_KID}" ] || [ -z "${PACK_SIGNING_PUBLIC_PEM}" ]; then
+            echo "::error::PACK_SIGNING_KID / PACK_SIGNING_PUBLIC_PEM repository variables are not set."
+            echo "Without them there is no trust root and this check cannot mean anything."
+            exit 1
+          fi
+          # Repository VARIABLES, not secrets: a public key is not secret, and variables are
+          # readable by fork pull requests, so this check works on external contributions too.
+          python3 - <<'PY' > "${RUNNER_TEMP}/keys.json"
+          import json, os
+          print(json.dumps({os.environ["PACK_SIGNING_KID"]: os.environ["PACK_SIGNING_PUBLIC_PEM"]}))
+          PY
+
+      - name: Verify every pack that carries a signature
+        run: |
+          set -uo pipefail
+          docker pull -q "$RUNTIME_IMAGE"
+          signed=0; unsigned=0; failed=0; unsigned_list=""
+          for pack in agent-packs/*/; do
+            name="$(basename "$pack")"
+            if [ ! -f "${pack}pack.sig" ]; then
+              unsigned=$((unsigned + 1)); unsigned_list="${unsigned_list} ${name}"
+              continue
+            fi
+            signed=$((signed + 1))
+            echo "::group::verify ${name}"
+            if docker run --rm \
+                 -v "$PWD/${pack}:/pack:ro" \
+                 -v "${RUNNER_TEMP}/keys.json:/keys.json:ro" \
+                 "$RUNTIME_IMAGE" pack verify /pack --keys /keys.json; then
+              echo "ok: ${name}"
+            else
+              echo "::error file=${pack}pack.sig::${name} has a pack.sig that does NOT verify — contents changed since signing, or it was signed by a key that is not published. Re-sign it (Sign Pack workflow); do not hand-edit pack.sig."
+              failed=$((failed + 1))
+            fi
+            echo "::endgroup::"
+          done
+
+          echo "signed: ${signed}   unsigned: ${unsigned}   failed: ${failed}"
+          # Unsigned packs are reported, not failed. 14 of 15 packs are unsigned today, so
+          # failing on them would make this check un-adoptable and it would just get disabled.
+          # A pack that CLAIMS a signature and does not match is a different thing entirely:
+          # that is either tampering or an un-re-signed edit, and it fails the build.
+          if [ "$unsigned" -gt 0 ]; then
+            echo "::warning::${unsigned} pack(s) ship no pack.sig and were not verified:${unsigned_list}"
+          fi
+          [ "$failed" -eq 0 ] || exit 1
