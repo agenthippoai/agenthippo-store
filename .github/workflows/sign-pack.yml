@@ -78,7 +78,45 @@ jobs:
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
           fi
 
+      - name: Decide whether signing is actually needed
+        id: need
+        env:
+          PACK_SIGNING_KID: ${{ vars.PACK_SIGNING_KID }}
+        run: |
+          set -euo pipefail
+          # `pack sign` stamps an `iat` into the JWT, so re-signing byte-identical content
+          # still produces a different pack.sig. A `git diff --quiet` guard therefore never
+          # fires, and every dispatch lands a churn commit that changes nothing anyone can
+          # verify differently. Compare what the signature ASSERTS instead: the content digest
+          # and the kid.
+          #
+          # kid is part of the comparison on purpose — re-signing unchanged content under a NEW
+          # key is exactly what key rotation is, and must not be skipped.
+          current="$(docker run --rm --user "$(id -u):$(id -g)" \
+            -v "$PWD/agent-packs/${PACK}:/pack:ro" "$RUNTIME_IMAGE" pack digest /pack \
+            | awk '{print $1}')"
+          echo "current digest: ${current}"
+          if [ -f "agent-packs/${PACK}/pack.sig" ]; then
+            read -r sig_digest sig_kid < <(python3 - "agent-packs/${PACK}/pack.sig" <<'PY'
+          import base64, json, sys
+          h, p, _ = open(sys.argv[1]).read().strip().split(".")
+          d = lambda s: json.loads(base64.urlsafe_b64decode(s + "=" * (-len(s) % 4)))
+          print(d(p).get("digest", ""), d(h).get("kid", ""))
+          PY
+          )
+            echo "signed digest : ${sig_digest} (kid ${sig_kid})"
+            if [ "$sig_digest" = "$current" ] && [ "$sig_kid" = "$PACK_SIGNING_KID" ]; then
+              echo "Already signed for this exact content under ${PACK_SIGNING_KID}. Nothing to do."
+              echo "needed=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          else
+            echo "no existing pack.sig"
+          fi
+          echo "needed=true" >> "$GITHUB_OUTPUT"
+
       - name: Sign
+        if: steps.need.outputs.needed == 'true'
         env:
           PACK_SIGNING_PRIVATE_PEM: ${{ secrets.PACK_SIGNING_PRIVATE_PEM }}
           PACK_SIGNING_KID: ${{ vars.PACK_SIGNING_KID }}
@@ -103,6 +141,7 @@ jobs:
           rm -f "$KEY"
 
       - name: Verify what we just produced
+        if: steps.need.outputs.needed == 'true'
         env:
           PACK_SIGNING_KID: ${{ vars.PACK_SIGNING_KID }}
           PACK_SIGNING_PUBLIC_PEM: ${{ vars.PACK_SIGNING_PUBLIC_PEM }}
@@ -120,12 +159,9 @@ jobs:
             "$RUNTIME_IMAGE" pack verify /pack --keys /keys.json
 
       - name: Commit pack.sig
+        if: steps.need.outputs.needed == 'true'
         run: |
           set -euo pipefail
-          if git diff --quiet -- "agent-packs/${PACK}/pack.sig"; then
-            echo "pack.sig unchanged — content already matched the published signature. Nothing to commit."
-            exit 0
-          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add "agent-packs/${PACK}/pack.sig"
