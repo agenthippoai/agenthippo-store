@@ -3,8 +3,8 @@ apiVersion: agenthippo.ai/v1
 kind: Agent
 metadata:
   name: joker1
-  version: 0.1.2
-  author: trungn
+  version: 0.1.3
+  author: AgentHippo
   description: always start your response with a joke
 
 spec:
@@ -22,7 +22,10 @@ spec:
     # - ./rules/my-rule.md
 
   permissions:
-    approval: unrestricted
-    fileAccess: full
+    # Least privilege that's still useful: this agent doesn't need broader
+    # filesystem access than its own workspace. Widen only if your agent
+    # genuinely needs it (read-only | workspace-write | full) — treat that as
+    # a change worth its own review, not a default.
+    fileAccess: workspace-write
 
   visibility: internal

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>joker1</title>
+  <style>
+    :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+    body { max-width: 720px; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; }
+    h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
+    .sub { opacity: 0.7; font-size: 0.9rem; margin-bottom: 1.5rem; }
+    #log { border: 1px solid #8884; border-radius: 8px; min-height: 200px; padding: 1rem; white-space: pre-wrap; margin-bottom: 1rem; }
+    form { display: flex; gap: 0.5rem; }
+    input[type=text] { flex: 1; padding: 0.6rem 0.75rem; border-radius: 6px; border: 1px solid #8886; font: inherit; }
+    button { padding: 0.6rem 1rem; border-radius: 6px; border: 0; background: #2563eb; color: #fff; font: inherit; cursor: pointer; }
+    button:disabled { opacity: 0.6; cursor: wait; }
+  </style>
+</head>
+<body>
+  <h1>joker1</h1>
+  <p class="sub">Signed in via Google SSO. Chat uses the agent API behind this page.</p>
+  <div id="log">Ready. Send a message below.</div>
+  <form id="chat">
+    <input id="msg" type="text" placeholder="Ask the agent…" autocomplete="off" required />
+    <button type="submit">Send</button>
+  </form>
+  <script>
+    const log = document.getElementById("log");
+    const form = document.getElementById("chat");
+    const input = document.getElementById("msg");
+    // Stable per-browser session id so turns resume the same conversation (multi-turn).
+    const sessionId = (self.crypto && crypto.randomUUID) ? crypto.randomUUID() : ("web-" + Date.now().toString(36) + Math.random().toString(36).slice(2));
+    function append(text) {
+      log.textContent += (log.textContent.endsWith("\n") || log.textContent === "Ready. Send a message below." ? "" : "\n") + text;
+    }
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const message = input.value.trim();
+      if (!message) return;
+      input.value = "";
+      form.querySelector("button").disabled = true;
+      append("\nYou: " + message + "\nAgent: ");
+      try {
+        const body = { message, session_id: sessionId };
+        const res = await fetch("/v1/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || res.statusText);
+        append(data.text || data.response || JSON.stringify(data));
+      } catch (err) {
+        append("[error] " + (err.message || err));
+      } finally {
+        form.querySelector("button").disabled = false;
+        input.focus();
+      }
+    });
+    input.focus();
+  </script>
+</body>
+</html>
