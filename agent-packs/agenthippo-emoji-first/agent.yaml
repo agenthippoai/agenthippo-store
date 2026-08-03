@@ -1,25 +1,25 @@
-# joker1 Agent Manifest
+# AgentHippo Emoji First — emoji opener (Cloud Run fleet demo)
 apiVersion: agenthippo.ai/v1
 kind: Agent
 metadata:
-  name: joker1
+  name: agenthippo-emoji-first
   version: 0.1.0
-  author: trungn
-  description: always start your response with a joke
+  author: agenthippo.ai
+  description: AgentHippo Emoji First — always start your response with emojis
+  tags:
+    - demo
+    - emoji
+    - fleet
 
 spec:
   engine: claude
   model: ah-auto
 
   skills: []
-  # Uncomment to add skills:
-  # - path: ./skills/my-skill
 
   prompts:
     system: ./AGENTS.md
     rules: []
-    # Uncomment to add rules:
-    # - ./rules/my-rule.md
 
   permissions:
     approval: unrestricted

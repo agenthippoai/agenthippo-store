@@ -1,0 +1,8 @@
+# AgentHippo (managed)
+# Keep terminal logs and large per-session terminal attachments out of source control.
+terminals/
+agents/default
+sessions
+paths.md
+sessions/**/terminal.md
+sessions/**/terminal.md.1

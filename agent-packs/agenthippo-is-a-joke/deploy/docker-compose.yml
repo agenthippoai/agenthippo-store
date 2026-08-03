@@ -1,0 +1,26 @@
+# Generated from Agent Pack agenthippo-is-a-joke@0.1.0 — packs.agenthippo.ai
+# Colocated agent (PLAN/deploy.md §4 state 4) — no Caddy/oauth2-proxy/auth-broker of its
+# own. Joins the org IdP's docker network so its already-running Caddy can reach this
+# agent by name; identity is verified entirely by the IdP's auth-broker (see
+# deploy/agent-route.caddy for the route to copy onto the IdP host).
+name: agenthippo-is-a-joke
+services:
+  agent:
+    container_name: agenthippo-is-a-joke-agent
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    env_file:
+      - path: .env
+        required: false
+    volumes: ["agenthippo-state:/state"]
+    networks: [colocate]
+    expose: ["8080"]
+
+networks:
+  colocate:
+    external: true
+    name: ${AGENTHIPPO_IDP_NETWORK:-agenthippo-idp-colocate}
+
+volumes:
+  agenthippo-state:

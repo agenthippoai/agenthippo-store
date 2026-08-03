@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="agenthippo-pack-name" content="cost-guard-demo" />
+  <meta name="agenthippo-pack-version" content="1.1.0" />
+  <title>Support Analyst v1.1.0</title>
+  <style>
+    :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+    body { max-width: 820px; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; }
+    h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
+    .sub { opacity: 0.7; font-size: 0.9rem; margin-bottom: 1rem; }
+    .badge { display: inline-block; font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 999px; background: #dc262633; color: #991b1b; margin-left: 0.35rem; }
+    @media (prefers-color-scheme: dark) { .badge { color: #fca5a5; } }
+    #cost-panel { border: 1px solid #8884; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 1rem; font-size: 0.9rem; }
+    #cost-panel table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+    #cost-panel th, #cost-panel td { text-align: left; padding: 0.25rem 0.35rem; border-bottom: 1px solid #8883; }
+    #log { border: 1px solid #8884; border-radius: 8px; min-height: 200px; padding: 1rem; white-space: pre-wrap; margin-bottom: 1rem; max-height: 420px; overflow: auto; }
+    form { display: flex; gap: 0.5rem; }
+    input[type=text] { flex: 1; padding: 0.6rem 0.75rem; border-radius: 6px; border: 1px solid #8886; font: inherit; }
+    button { padding: 0.6rem 1rem; border-radius: 6px; border: 0; background: #2563eb; color: #fff; font: inherit; cursor: pointer; }
+    button:disabled { opacity: 0.6; cursor: wait; }
+    button.secondary { background: #64748b; }
+  </style>
+</head>
+<body>
+  <h1>Support Analyst <span class="badge" id="version-badge">v1.1.0</span></h1>
+  <p class="sub">Agent Pack <strong>cost-guard-demo</strong> — verbose prompt (cost regression). Signed in via your IdP.</p>
+  <div id="cost-panel">
+    <strong>Session cost estimate</strong> (chars ÷ 4 ≈ tokens; for demo only)
+    <table>
+      <thead><tr><th>Query</th><th>Out chars</th><th>~Tokens</th></tr></thead>
+      <tbody id="cost-rows"><tr><td colspan="3">No queries yet.</td></tr></tbody>
+      <tfoot><tr><th>Total</th><th id="total-chars">0</th><th id="total-tokens">0</th></tr></tfoot>
+    </table>
+    <button type="button" class="secondary" id="clear-stats" style="margin-top:0.5rem">Clear stats</button>
+  </div>
+  <div id="log">Ready. Ask a support question below.</div>
+  <form id="chat">
+    <input id="msg" type="text" placeholder="e.g. How do I reset my password?" autocomplete="off" required />
+    <button type="submit">Send</button>
+  </form>
+  <script>
+    const PACK_VERSION = "1.1.0";
+    const log = document.getElementById("log");
+    const form = document.getElementById("chat");
+    const input = document.getElementById("msg");
+    const costRows = document.getElementById("cost-rows");
+    const totalCharsEl = document.getElementById("total-chars");
+    const totalTokensEl = document.getElementById("total-tokens");
+    const storageKey = "cost-guard-demo-stats-" + PACK_VERSION;
+    const sessionId = (self.crypto && crypto.randomUUID) ? crypto.randomUUID() : ("web-" + Date.now().toString(36));
+    let stats = JSON.parse(localStorage.getItem(storageKey) || "[]");
+
+    function estTokens(chars) { return Math.ceil(chars / 4); }
+
+    function renderStats() {
+      if (!stats.length) {
+        costRows.innerHTML = '<tr><td colspan="3">No queries yet.</td></tr>';
+        totalCharsEl.textContent = "0";
+        totalTokensEl.textContent = "0";
+        return;
+      }
+      let totalChars = 0;
+      costRows.innerHTML = stats.map((s, i) => {
+        totalChars += s.chars;
+        const q = s.query.length > 40 ? s.query.slice(0, 37) + "…" : s.query;
+        return `<tr><td>${i + 1}. ${q.replace(/</g, "&lt;")}</td><td>${s.chars}</td><td>${estTokens(s.chars)}</td></tr>`;
+      }).join("");
+      totalCharsEl.textContent = String(totalChars);
+      totalTokensEl.textContent = String(estTokens(totalChars));
+    }
+
+    function append(text) {
+      log.textContent += (log.textContent.endsWith("\n") || log.textContent.startsWith("Ready.") ? "" : "\n") + text;
+    }
+
+    document.getElementById("clear-stats").addEventListener("click", () => {
+      stats = [];
+      localStorage.removeItem(storageKey);
+      renderStats();
+    });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const message = input.value.trim();
+      if (!message) return;
+      input.value = "";
+      form.querySelector("button").disabled = true;
+      append("\nYou: " + message + "\nAgent: ");
+      try {
+        const res = await fetch("/v1/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message, session_id: sessionId }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || res.statusText);
+        const text = data.text || data.response || JSON.stringify(data);
+        append(text);
+        stats.push({ query: message, chars: text.length, at: Date.now() });
+        localStorage.setItem(storageKey, JSON.stringify(stats));
+        renderStats();
+      } catch (err) {
+        append("[error] " + (err.message || err));
+      } finally {
+        form.querySelector("button").disabled = false;
+        input.focus();
+      }
+    });
+
+    renderStats();
+    input.focus();
+  </script>
+</body>
+</html>

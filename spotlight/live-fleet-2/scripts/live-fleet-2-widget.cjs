@@ -295,10 +295,13 @@ function buildShellHtml(meta) {
 		}
 		function applySnapshot(payload, meta) {
 			if (payload && typeof payload === 'object') {
+				const incoming = Array.isArray(payload.sessions) ? payload.sessions : null;
+				const keepExisting = incoming && incoming.length === 0 && (DATA.sessions || []).length > 0
+					&& (meta?.omitSessions || meta?.ok === false);
 				DATA = {
-					generatedAt: payload.generatedAt || '',
-					totals: payload.totals || {},
-					sessions: Array.isArray(payload.sessions) ? payload.sessions : [],
+					generatedAt: payload.generatedAt || DATA.generatedAt || '',
+					totals: payload.totals || DATA.totals || {},
+					sessions: keepExisting ? DATA.sessions : (incoming || DATA.sessions || []),
 				};
 			}
 			if (meta && typeof meta === 'object') {

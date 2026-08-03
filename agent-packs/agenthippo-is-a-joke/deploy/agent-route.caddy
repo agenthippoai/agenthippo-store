@@ -1,0 +1,54 @@
+# Generated from Agent Pack agenthippo-is-a-joke@0.1.0 — packs.agenthippo.ai
+# Colocated route for joke.agenthippo.ai — copy into enterprise-deploy/idp/agents/
+# (rename e.g. to agenthippo-is-a-joke.caddy), then on the IdP host:
+#   docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
+# Requires this agent's docker-compose.yml (already generated) to be up, so
+# agenthippo-is-a-joke-agent exists on the shared `agenthippo-idp-colocate` network.
+# http:// (not https://) to match the IdP Caddyfile's TLS model: auto_https is off
+# there and TLS terminates in front (Cloudflare Tunnel/nginx), so every site block —
+# including this imported one — must be plain HTTP, same as the IdP's own site address.
+http://joke.agenthippo.ai {
+  handle /api/ide/* {
+    reverse_proxy auth-broker:9780 {
+      header_up X-Forwarded-Proto https
+      header_up X-Forwarded-Host {http.request.host}
+    }
+  }
+  @health path /health /ready
+  handle @health {
+    reverse_proxy agenthippo-is-a-joke-agent:8080
+  }
+  # API clients (IDE) with a Bearer token: validate via auth-broker, copy identity header.
+  @apiWithAuth {
+    path /v1/*
+    header Authorization *
+  }
+  handle @apiWithAuth {
+    forward_auth auth-broker:9780 {
+      uri /api/ide/me
+      copy_headers X-Agent-User
+      header_up X-Forwarded-Proto https
+      header_up X-Forwarded-Host {http.request.host}
+      @unauth status 401
+      handle_response @unauth {
+        respond "Unauthorized" 401
+      }
+    }
+    reverse_proxy agenthippo-is-a-joke-agent:8080
+  }
+  # Browser clients: the shared .agenthippo.ai cookie is verified by auth-broker. No cookie
+  # → redirect to the central IdP to log in (it stamps the cookie), then return.
+  handle {
+    forward_auth auth-broker:9780 {
+      uri /api/ide/me
+      copy_headers X-Agent-User
+      header_up X-Forwarded-Proto https
+      header_up X-Forwarded-Host {http.request.host}
+      @unauth status 401
+      handle_response @unauth {
+        redir * "https://auth.agenthippo.ai/oauth/browser-login?return_to=https://{http.request.host}{http.request.uri}" 302
+      }
+    }
+    reverse_proxy agenthippo-is-a-joke-agent:8080
+  }
+}

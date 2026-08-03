@@ -1,0 +1,352 @@
+{
+  "version": 1,
+  "workspaceRoot": "/Users/tom/dev/agenthippo-store",
+  "generatedAt": "2026-05-18T18:03:12.043Z",
+  "activeAgentId": "default",
+  "rules": [
+    {
+      "relPath": "AGENTS.md",
+      "sha256": "35fd67531ff2bd330592e2ad924eb6db0f09cffb9eb7596fe4cb77fb2cc2aaac",
+      "size": 10923,
+      "mtimeMs": 1779091684348.9521
+    },
+    {
+      "relPath": "context.md",
+      "sha256": "09fd517a7c68b4b70cb39db22da7ca95f569340f227b6d3a22106fc647986007",
+      "size": 522,
+      "mtimeMs": 1779091684992.636
+    }
+  ],
+  "skills": [
+    {
+      "dirName": "agent-browser",
+      "name": "agent-browser",
+      "description": "Use for website automation in a managed or CDP-enabled browser: open pages, inspect accessibility snapshots, click and fill elements, manage tabs, reuse sessions, take screenshots, and extract data. Use for browser-native web tasks; use desktop-automation instead for an already-open normal Chrome/Edge window that is not CDP-enabled.",
+      "skillMdRelPath": "skills/agent-browser/SKILL.md",
+      "skillMdSha256": "b3b2299e8eb08576e4b09ff03a56d51bc17dca0fd52f4cfeb270ba48f07288c2",
+      "skillMdSize": 2623,
+      "skillMdMtimeMs": 1779091684349.8105
+    },
+    {
+      "dirName": "agent-builder",
+      "name": "agent-builder",
+      "description": "Create observable agents across any framework (Agent Pack, LangChain, CrewAI, raw OpenAI/Anthropic SDK) with Spotlight analytics from the first run. Use when the user wants to build a new agent, scaffold agent code for a specific framework, connect a Python agent to LiteLLM observability, or make existing agent code observable via the LiteLLM proxy.",
+      "skillMdRelPath": "skills/agent-builder/SKILL.md",
+      "skillMdSha256": "21ee661e2bd101047e04c7b73cac42f237b28fc4838edc5adfafb7882ac86a66",
+      "skillMdSize": 3119,
+      "skillMdMtimeMs": 1779091684350.6216
+    },
+    {
+      "dirName": "agent-engine-creator",
+      "name": "agent-engine-creator",
+      "description": "Create, plug in, and test an AgentHippo custom agent engine from a developer-owned runtime. Use when adding a v2 engine under .agent-hippo/engines, writing engine.manifest.json and engine.mjs, adapting an SDK/CLI runtime to AgentHippo's custom engine contract, or validating session continuation with AgentHippo CLI/serve and the IDE.",
+      "skillMdRelPath": "skills/agent-engine-creator/SKILL.md",
+      "skillMdSha256": "0cf80a6c92e6a646dc9d58eaae74ef6204f7f9592cb70d277599848062b0517b",
+      "skillMdSize": 19470,
+      "skillMdMtimeMs": 1779091684353.8735
+    },
+    {
+      "dirName": "agent-engine-installer",
+      "name": "agent-engine-installer",
+      "description": "Install, update, and validate AgentHippo custom engines such as Gemini or OpenClaw by copying selected engine adapters from a Git checkout/cache into ~/.agent-hippo/engines/<id>. Use when a user wants to distribute, install, test, or refresh custom engines without setting AGENTHIPPO_CUSTOM_ENGINES_DIR.",
+      "skillMdRelPath": "skills/agent-engine-installer/SKILL.md",
+      "skillMdSha256": "27ad79bd1d3bbfd82ab5a16c8d416de29eb5adf8b05c6b1bcf9113f3aafbddfa",
+      "skillMdSize": 3053,
+      "skillMdMtimeMs": 1779091684354.5586
+    },
+    {
+      "dirName": "agenthippo-cli",
+      "name": "agenthippo-cli",
+      "description": "Ensure the AgentHippo CLI is installed and reachable, installing it automatically if missing. Use as a preflight before any skill or agent that invokes the agenthippo binary (debug-agent, agentpack-testbench, skill-installer, etc.), or when the user reports \"agenthippo: command not found\".",
+      "skillMdRelPath": "skills/agenthippo-cli/SKILL.md",
+      "skillMdSha256": "f5629e2ada3f303202d3baaaf8ee9634f69d4042b70627cfa0b0101a67f0f132",
+      "skillMdSize": 2129,
+      "skillMdMtimeMs": 1779091684356.4038
+    },
+    {
+      "dirName": "agentpack-creator",
+      "name": "agentpack-creator",
+      "description": "Create specialized Agent Packs. Use when the user asks to create a new agent, scaffold an agent for a specific task, set up a specialized agent configuration, build a focused assistant for a particular domain, or configure an agent pack. This skill guides the creation of working, domain-specific agents rather than generic templates.",
+      "skillMdRelPath": "skills/agentpack-creator/SKILL.md",
+      "skillMdSha256": "190546c3a0b86eb152404265a2b45a8d1b180906ebf6857a39c9cb6085c9ed25",
+      "skillMdSize": 12308,
+      "skillMdMtimeMs": 1779091684357.648
+    },
+    {
+      "dirName": "agentpack-testbench",
+      "name": "agentpack-testbench",
+      "description": "Systematically test Agent Packs via CLI with structured test cases, analytics verification, and pass/fail gates. Use when the user wants to test an agent pack, run canary tests, verify agent behavior via CLI, debug pack issues with trace data, or generate a test report with real analytics evidence.",
+      "skillMdRelPath": "skills/agentpack-testbench/SKILL.md",
+      "skillMdSha256": "2cd8d4d893e88f7e1ad53da39863765adc17c988ecede400dee7d7beea242503",
+      "skillMdSize": 3825,
+      "skillMdMtimeMs": 1779091684360.1433
+    },
+    {
+      "dirName": "algorithmic-art",
+      "name": "algorithmic-art",
+      "description": "Creating algorithmic art using p5.js with seeded randomness and interactive parameter exploration. Use this when users request creating art using code, generative art, algorithmic art, flow fields, or particle systems. Create original algorithmic art rather than copying existing artists' work to avoid copyright violations.",
+      "skillMdRelPath": "skills/algorithmic-art/SKILL.md",
+      "skillMdSha256": "3bc4092c09804853186524c826bc0621b940bb6122c05b84496dff95388e6eef",
+      "skillMdSize": 19769,
+      "skillMdMtimeMs": 1779091684362.33
+    },
+    {
+      "dirName": "debug-agent",
+      "name": "debug-agent",
+      "description": "Diagnose issues in LLM-powered agents (prompt, tools, context, looping, cost/latency). Uses local trace data when available. Optional repro/trace id via ARGUMENTS.",
+      "skillMdRelPath": "skills/debug-agent/SKILL.md",
+      "skillMdSha256": "eedaf7facd56be157860712e9f6bf9a3c50b8e2194ac9014add3a70493745f00",
+      "skillMdSize": 3789,
+      "skillMdMtimeMs": 1779091684499.4048
+    },
+    {
+      "dirName": "desktop-automation",
+      "name": "desktop-automation",
+      "description": "Drive desktop applications on Windows and macOS using accessibility APIs, keyboard input, screenshots, and coordinate fallback. Use when you need to control an already-open app window, collect visual evidence, debug UI state, or automate UI that browser-native tools cannot attach to.",
+      "skillMdRelPath": "skills/desktop-automation/SKILL.md",
+      "skillMdSha256": "bb11072720038c4f40de8049cef30d8c5212eeb0c22c12d50253d378b848da0a",
+      "skillMdSize": 6482,
+      "skillMdMtimeMs": 1779091684509.1282
+    },
+    {
+      "dirName": "docx",
+      "name": "docx",
+      "description": "Comprehensive document creation, editing, and analysis with support for tracked changes, comments, formatting preservation, and text extraction. When Claude needs to work with professional documents (.docx files) for: (1) Creating new documents, (2) Modifying or editing content, (3) Working with tracked changes, (4) Adding comments, or any other document tasks",
+      "skillMdRelPath": "skills/docx/SKILL.md",
+      "skillMdSha256": "0bd90681fcab2e282025ee14acf508b60bbd6c41ac6c3bf83c0dc14d52c37933",
+      "skillMdSize": 10150,
+      "skillMdMtimeMs": 1779091684511.8909
+    },
+    {
+      "dirName": "mcp-builder",
+      "name": "mcp-builder",
+      "description": "Guide for creating high-quality MCP (Model Context Protocol) servers that enable LLMs to interact with external services through well-designed tools. Use when building MCP servers to integrate external APIs or services, whether in Python (FastMCP) or Node/TypeScript (MCP SDK).",
+      "skillMdRelPath": "skills/mcp-builder/SKILL.md",
+      "skillMdSha256": "dd4de751f52de6e120f9ce0de1196f567b6f4943de2a8cd38600d5a4ba84f08d",
+      "skillMdSize": 11318,
+      "skillMdMtimeMs": 1779091684889.5896
+    },
+    {
+      "dirName": "openclaw",
+      "name": "openclaw",
+      "description": "Fast operational playbook for OpenClaw/HippoClaw: setup channels (especially Telegram), run external-agent gateway bridge, bind routing, verify health, and troubleshoot common failures with minimal commands, and integrate with Agenthippo (CLI + IDE)",
+      "skillMdRelPath": "skills/openclaw/SKILL.md",
+      "skillMdSha256": "323a387cc9c64d6bac70b7a4f5ebe9598bd53f87b69a74276ef0af89637a4822",
+      "skillMdSize": 9920,
+      "skillMdMtimeMs": 1779091684921.7559
+    },
+    {
+      "dirName": "pdf",
+      "name": "pdf",
+      "description": "Comprehensive PDF manipulation toolkit for extracting text and tables, creating new PDFs, merging/splitting documents, and handling forms. When Claude needs to fill in a PDF form or programmatically process, generate, or analyze PDF documents at scale.",
+      "skillMdRelPath": "skills/pdf/SKILL.md",
+      "skillMdSha256": "38d8559d4899602f82f3560052132aa0c40cfca80203037729756bdb4fb8e0cb",
+      "skillMdSize": 7068,
+      "skillMdMtimeMs": 1779091684939.4646
+    },
+    {
+      "dirName": "pptx",
+      "name": "pptx",
+      "description": "Presentation creation, editing, and analysis. When Claude needs to work with presentations (.pptx files) for: (1) Creating new presentations, (2) Modifying or editing content, (3) Working with layouts, (4) Adding comments or speaker notes, or any other presentation tasks",
+      "skillMdRelPath": "skills/pptx/SKILL.md",
+      "skillMdSha256": "b6f25545bfb358739f1532f793458b5dbc87ee009933cb7c306b2d951ab6617f",
+      "skillMdSize": 25551,
+      "skillMdMtimeMs": 1779091684944.7144
+    },
+    {
+      "dirName": "prompt-lab",
+      "name": "prompt-lab",
+      "description": "Find agent failure patterns in traces, add few-shot examples or prompt edits to fix them, and verify improvement with before/after comparison.",
+      "skillMdRelPath": "skills/prompt-lab/SKILL.md",
+      "skillMdSha256": "884c6425bcb220ea81bc59a7dc9e3aea6ec31beb9c9f9aca3912a28a751681a1",
+      "skillMdSize": 4615,
+      "skillMdMtimeMs": 1779091684974.2686
+    },
+    {
+      "dirName": "skill-creator",
+      "name": "skill-creator",
+      "description": "Guide for creating effective skills. This skill should be used when users want to create a new skill (or update an existing skill) that extends Claude's capabilities with specialized knowledge, workflows, or tool integrations.",
+      "skillMdRelPath": "skills/skill-creator/SKILL.md",
+      "skillMdSha256": "95cc48cfd023c2d1151cb08ce64a1bf58eab12f48ae9b4ab2a14c4ec8a05e25c",
+      "skillMdSize": 18827,
+      "skillMdMtimeMs": 1779091684976.2827
+    },
+    {
+      "dirName": "skill-installer",
+      "name": "skill-installer",
+      "description": "Guide for discovering and installing skills, agent packs, and MCP servers from the registry. Use when users ask to find, search, browse, or install skills, agent packs, MCPs, or agent configurations.",
+      "skillMdRelPath": "skills/skill-installer/SKILL.md",
+      "skillMdSha256": "4c834218d9c15b33292d4d6868f433ed672e8e6a00ce991af8716861b2bd1f0d",
+      "skillMdSize": 6236,
+      "skillMdMtimeMs": 1779091684978.7944
+    },
+    {
+      "dirName": "spotlight-dashboard",
+      "name": "spotlight-dashboard",
+      "description": "Customize the Spotlight dashboard to visualize charts, interactive js, HTML widgets, or general presentation of images, reports. Use this skill when you need to wire scripts/views or adjust dashboard rendering behavior.",
+      "skillMdRelPath": "skills/spotlight-dashboard/SKILL.md",
+      "skillMdSha256": "9fb878cda00914c6c6ad1e1b0a5aacc12fea43845de4846cf66b3aab5178af04",
+      "skillMdSize": 2705,
+      "skillMdMtimeMs": 1779091684981.068
+    },
+    {
+      "dirName": "spotlight-insights",
+      "name": "spotlight-insights",
+      "description": "Orchestrates Spotlight analytics end-to-end by combining query, visualization, optimization, and reporting workflows. Use when the user asks for a complete analysis package with metrics, charts, reports, exports, and recommendations.",
+      "skillMdRelPath": "skills/spotlight-insights/SKILL.md",
+      "skillMdSha256": "b7c227e514b102b0e0993d4ef182df5d44d00eb6c501d6eb2f6ad659163fb7a7",
+      "skillMdSize": 3487,
+      "skillMdMtimeMs": 1779091684981.7993
+    },
+    {
+      "dirName": "spotlight-optimize",
+      "name": "spotlight-optimize",
+      "description": "Identifies cost and performance optimization opportunities from Spotlight trace data using quantitative heuristics and prioritized actions. Use when the user asks to reduce spend, prevent loops, or compare efficiency across models, agents, and versions.",
+      "skillMdRelPath": "skills/spotlight-optimize/SKILL.md",
+      "skillMdSha256": "6f673869f9d5d5f00849b50e7f17324a99580df9c1e3b1b8366c36491612df62",
+      "skillMdSize": 3488,
+      "skillMdMtimeMs": 1779091684982.2712
+    },
+    {
+      "dirName": "spotlight-query",
+      "name": "spotlight-query",
+      "description": "Query and analyze agent session traces — costs, tool usage, regressions, and request debugging. Uses DuckDB on local OTEL traces. Query Tool scripts/query-analytics.sh — DuckDB-based query tool with pre-built queries and schema check.",
+      "skillMdRelPath": "skills/spotlight-query/SKILL.md",
+      "skillMdSha256": "ffe19ccd141bec66d6c736e862be358b292779c4a2b48137a49e8366e85fd021",
+      "skillMdSize": 12359,
+      "skillMdMtimeMs": 1779091684984.4404
+    },
+    {
+      "dirName": "spotlight-report",
+      "name": "spotlight-report",
+      "description": "Produces reusable Spotlight report and export generators from trace analytics queries, including markdown summaries, incident post-mortems, and CSV/JSON data bundles. Use when the user asks for written analytics deliverables.",
+      "skillMdRelPath": "skills/spotlight-report/SKILL.md",
+      "skillMdSha256": "7672ed3b3d2e6fe2b64053e3ead9c65b97b8650f27f423aa5afd86d783a45126",
+      "skillMdSize": 2563,
+      "skillMdMtimeMs": 1779091684988.3188
+    },
+    {
+      "dirName": "spotlight-visualize",
+      "name": "spotlight-visualize",
+      "description": "Generates Spotlight analytics charts using Matplotlib or self-contained HTML from DuckDB query results and saves reusable refreshable scripts. Use when the user asks for charts, trends, comparisons, or dashboard visuals.",
+      "skillMdRelPath": "skills/spotlight-visualize/SKILL.md",
+      "skillMdSha256": "d0d4e420523e8b93f63c32eb3e7b49e6cd840501cc6a25d948e96b81b28e4601",
+      "skillMdSize": 3718,
+      "skillMdMtimeMs": 1779091684989.0635
+    },
+    {
+      "dirName": "xlsx",
+      "name": "xlsx",
+      "description": "Comprehensive spreadsheet creation, editing, and analysis with support for formulas, formatting, data analysis, and visualization. When Claude needs to work with spreadsheets (.xlsx, .xlsm, .csv, .tsv, etc) for: (1) Creating new spreadsheets with formulas and formatting, (2) Reading or analyzing data, (3) Modify existing spreadsheets while preserving formulas, (4) Data analysis and visualization in spreadsheets, or (5) Recalculating formulas",
+      "skillMdRelPath": "skills/xlsx/SKILL.md",
+      "skillMdSha256": "020ccdb5932257b66c638ec1157ea248d57fa52c8c01f1f68b559b5970c7df35",
+      "skillMdSize": 10632,
+      "skillMdMtimeMs": 1779091684990.716
+    }
+  ],
+  "rulesSignature": "a2360658295d190e",
+  "skillsSignature": "77834170d64281c9",
+  "agentideSignature": "0a0a5c84e2a30bce",
+  "derivedSkillIngestState": {
+    "agent-browser": {
+      "lastIngestedSkillMdSha256": "b3b2299e8eb08576e4b09ff03a56d51bc17dca0fd52f4cfeb270ba48f07288c2",
+      "lastIngestedAt": "2026-05-18T08:08:07.995Z"
+    },
+    "agent-builder": {
+      "lastIngestedSkillMdSha256": "21ee661e2bd101047e04c7b73cac42f237b28fc4838edc5adfafb7882ac86a66",
+      "lastIngestedAt": "2026-05-18T08:08:07.996Z"
+    },
+    "agent-engine-creator": {
+      "lastIngestedSkillMdSha256": "0cf80a6c92e6a646dc9d58eaae74ef6204f7f9592cb70d277599848062b0517b",
+      "lastIngestedAt": "2026-05-18T08:08:07.997Z"
+    },
+    "agent-engine-installer": {
+      "lastIngestedSkillMdSha256": "27ad79bd1d3bbfd82ab5a16c8d416de29eb5adf8b05c6b1bcf9113f3aafbddfa",
+      "lastIngestedAt": "2026-05-18T08:08:07.998Z"
+    },
+    "agenthippo-cli": {
+      "lastIngestedSkillMdSha256": "f5629e2ada3f303202d3baaaf8ee9634f69d4042b70627cfa0b0101a67f0f132",
+      "lastIngestedAt": "2026-05-18T08:08:07.998Z"
+    },
+    "agentpack-creator": {
+      "lastIngestedSkillMdSha256": "190546c3a0b86eb152404265a2b45a8d1b180906ebf6857a39c9cb6085c9ed25",
+      "lastIngestedAt": "2026-05-18T08:08:07.999Z"
+    },
+    "agentpack-testbench": {
+      "lastIngestedSkillMdSha256": "2cd8d4d893e88f7e1ad53da39863765adc17c988ecede400dee7d7beea242503",
+      "lastIngestedAt": "2026-05-18T08:08:07.999Z"
+    },
+    "algorithmic-art": {
+      "lastIngestedSkillMdSha256": "3bc4092c09804853186524c826bc0621b940bb6122c05b84496dff95388e6eef",
+      "lastIngestedAt": "2026-05-18T08:08:08.000Z"
+    },
+    "debug-agent": {
+      "lastIngestedSkillMdSha256": "eedaf7facd56be157860712e9f6bf9a3c50b8e2194ac9014add3a70493745f00",
+      "lastIngestedAt": "2026-05-18T08:08:08.001Z"
+    },
+    "desktop-automation": {
+      "lastIngestedSkillMdSha256": "bb11072720038c4f40de8049cef30d8c5212eeb0c22c12d50253d378b848da0a",
+      "lastIngestedAt": "2026-05-18T08:08:08.001Z"
+    },
+    "docx": {
+      "lastIngestedSkillMdSha256": "0bd90681fcab2e282025ee14acf508b60bbd6c41ac6c3bf83c0dc14d52c37933",
+      "lastIngestedAt": "2026-05-18T08:08:08.002Z"
+    },
+    "mcp-builder": {
+      "lastIngestedSkillMdSha256": "dd4de751f52de6e120f9ce0de1196f567b6f4943de2a8cd38600d5a4ba84f08d",
+      "lastIngestedAt": "2026-05-18T08:08:08.003Z"
+    },
+    "openclaw": {
+      "lastIngestedSkillMdSha256": "323a387cc9c64d6bac70b7a4f5ebe9598bd53f87b69a74276ef0af89637a4822",
+      "lastIngestedAt": "2026-05-18T08:08:08.003Z"
+    },
+    "pdf": {
+      "lastIngestedSkillMdSha256": "38d8559d4899602f82f3560052132aa0c40cfca80203037729756bdb4fb8e0cb",
+      "lastIngestedAt": "2026-05-18T08:08:08.004Z"
+    },
+    "pptx": {
+      "lastIngestedSkillMdSha256": "b6f25545bfb358739f1532f793458b5dbc87ee009933cb7c306b2d951ab6617f",
+      "lastIngestedAt": "2026-05-18T08:08:08.005Z"
+    },
+    "prompt-lab": {
+      "lastIngestedSkillMdSha256": "884c6425bcb220ea81bc59a7dc9e3aea6ec31beb9c9f9aca3912a28a751681a1",
+      "lastIngestedAt": "2026-05-18T08:08:08.005Z"
+    },
+    "skill-creator": {
+      "lastIngestedSkillMdSha256": "95cc48cfd023c2d1151cb08ce64a1bf58eab12f48ae9b4ab2a14c4ec8a05e25c",
+      "lastIngestedAt": "2026-05-18T08:08:08.006Z"
+    },
+    "skill-installer": {
+      "lastIngestedSkillMdSha256": "4c834218d9c15b33292d4d6868f433ed672e8e6a00ce991af8716861b2bd1f0d",
+      "lastIngestedAt": "2026-05-18T08:08:08.006Z"
+    },
+    "spotlight-dashboard": {
+      "lastIngestedSkillMdSha256": "9fb878cda00914c6c6ad1e1b0a5aacc12fea43845de4846cf66b3aab5178af04",
+      "lastIngestedAt": "2026-05-18T08:08:08.007Z"
+    },
+    "spotlight-insights": {
+      "lastIngestedSkillMdSha256": "b7c227e514b102b0e0993d4ef182df5d44d00eb6c501d6eb2f6ad659163fb7a7",
+      "lastIngestedAt": "2026-05-18T08:08:08.008Z"
+    },
+    "spotlight-optimize": {
+      "lastIngestedSkillMdSha256": "6f673869f9d5d5f00849b50e7f17324a99580df9c1e3b1b8366c36491612df62",
+      "lastIngestedAt": "2026-05-18T08:08:08.008Z"
+    },
+    "spotlight-query": {
+      "lastIngestedSkillMdSha256": "ffe19ccd141bec66d6c736e862be358b292779c4a2b48137a49e8366e85fd021",
+      "lastIngestedAt": "2026-05-18T08:08:08.009Z"
+    },
+    "spotlight-report": {
+      "lastIngestedSkillMdSha256": "7672ed3b3d2e6fe2b64053e3ead9c65b97b8650f27f423aa5afd86d783a45126",
+      "lastIngestedAt": "2026-05-18T08:08:08.009Z"
+    },
+    "spotlight-visualize": {
+      "lastIngestedSkillMdSha256": "d0d4e420523e8b93f63c32eb3e7b49e6cd840501cc6a25d948e96b81b28e4601",
+      "lastIngestedAt": "2026-05-18T08:08:08.010Z"
+    },
+    "xlsx": {
+      "lastIngestedSkillMdSha256": "020ccdb5932257b66c638ec1157ea248d57fa52c8c01f1f68b559b5970c7df35",
+      "lastIngestedAt": "2026-05-18T08:08:08.010Z"
+    }
+  }
+}

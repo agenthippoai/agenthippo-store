@@ -17,7 +17,7 @@
     "mode": "message-suffix"
   },
   "model": {
-    "defaultModel": "auto",
-    "apiKeyEnvVar": "CURSOR_API_KEY"
-  }
+    "defaultModel": "auto"
+  },
+  "_comment_model": "No apiKeyEnvVar on purpose: that field means 'the host WRITES the resolved MODEL-ROUTING key here' (see openclaw: LITELLM_API_KEY). CURSOR_API_KEY is the operator's own crsr_ platform credential — the host has nothing to deliver into it and must never overwrite it. It reaches the engine via plain ambient env inheritance (~/.agent-hippo/.env); engine.mjs resolveApiKey() reads and validates it."
 }

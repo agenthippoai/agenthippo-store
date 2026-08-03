@@ -267,8 +267,61 @@ async function mapStreamEvent(event, emitter, openToolCalls, dedupe) {
 	}
 }
 
+/**
+ * Map AgentHippo's inline MCP record (`turn.mcpServers`) to the Cursor SDK's
+ * `AgentOptions.mcpServers` shape. The two are structurally identical — http servers are
+ * `{ type:'http', url, headers }`, stdio servers `{ command, args, env }` — so this is a
+ * light validated pass-through. This is how the data-plane gateway reaches Cursor: the
+ * loopback URL + per-turn `Authorization: Bearer <nonce>` header arrive here already
+ * resolved (host resolves `bearerTokenEnv` against the per-turn child env).
+ * @param {Record<string, any> | undefined} inline
+ * @returns {Record<string, any> | undefined}
+ */
+export function buildCursorMcpServers(inline) {
+	if (!inline || typeof inline !== 'object') {
+		return undefined;
+	}
+	/** @type {Record<string, any>} */
+	const out = {};
+	for (const [name, cfg] of Object.entries(inline)) {
+		if (!cfg || typeof cfg !== 'object') {
+			continue;
+		}
+		if (typeof cfg.url === 'string' && cfg.url) {
+			out[name] = {
+				type: cfg.type === 'sse' ? 'sse' : 'http',
+				url: cfg.url,
+				...(cfg.headers && Object.keys(cfg.headers).length > 0 ? { headers: cfg.headers } : {}),
+			};
+		} else if (typeof cfg.command === 'string' && cfg.command) {
+			out[name] = {
+				command: cfg.command,
+				...(Array.isArray(cfg.args) ? { args: cfg.args } : {}),
+				...(cfg.env && Object.keys(cfg.env).length > 0 ? { env: cfg.env } : {}),
+			};
+		}
+	}
+	return Object.keys(out).length > 0 ? out : undefined;
+}
+
+/**
+ * Signature of the resolved MCP config, INCLUDING any per-turn auth header. When a pack uses
+ * the data-plane gateway the Authorization nonce changes every turn, so this signature changes
+ * every turn — which busts the warm-agent cache and forces a re-open with the fresh nonce
+ * (via resume, so conversation continuity is preserved). Without this, a cached Cursor agent
+ * would keep sending turn 1's nonce and 401 on every later turn.
+ * @param {Record<string, any> | undefined} mcpServers
+ * @returns {string}
+ */
+export function mcpConfigSignature(mcpServers) {
+	if (!mcpServers) {
+		return 'none';
+	}
+	return createHash('sha256').update(JSON.stringify(mcpServers)).digest('hex').slice(0, 16);
+}
+
 export class CursorSdkEngine {
-	/** @type {Map<string, { agent: import('@cursor/sdk').SDKAgent, nativeSessionId: string, apiKeyHash: string, lastUsedAt: number }>} */
+	/** @type {Map<string, { agent: import('@cursor/sdk').SDKAgent, nativeSessionId: string, apiKeyHash: string, mcpSig: string, lastUsedAt: number }>} */
 	#sessions = new Map();
 
 	/**
@@ -303,17 +356,23 @@ export class CursorSdkEngine {
 		ensureRipgrepOnPath(turn);
 		const apiKeyHash = createHash('sha256').update(apiKey).digest('hex');
 		const model = { id: turn.modelId };
+		const mcpServers = buildCursorMcpServers(turn.mcpServers);
+		const mcpSig = mcpConfigSignature(mcpServers);
 		const local = {
 			cwd: turn.workspaceRoot,
 			settingSources: ['project'],
 		};
 
 		let state = this.#sessions.get(turn.session.key);
-		if (!state || state.apiKeyHash !== apiKeyHash) {
+		// Re-open when the MCP config signature changes too, not just the API key: a data-plane
+		// pack rotates its per-turn auth nonce every turn, and a reused warm agent would keep
+		// presenting the stale one (401). Re-open resumes the native session, so conversation
+		// continuity is preserved while the fresh nonce takes effect.
+		if (!state || state.apiKeyHash !== apiKeyHash || state.mcpSig !== mcpSig) {
 			if (state) {
 				await this.#disposeAgent(state.agent);
 			}
-			state = await this.#openAgent(Agent, CursorAgentError, turn, apiKey, model, local, apiKeyHash);
+			state = await this.#openAgent(Agent, CursorAgentError, turn, apiKey, model, local, apiKeyHash, mcpServers, mcpSig);
 			this.#sessions.set(turn.session.key, state);
 		}
 		state.lastUsedAt = Date.now();
@@ -468,14 +527,17 @@ export class CursorSdkEngine {
 	 * @param {{ id: string }} model
 	 * @param {{ cwd: string, settingSources: string[] }} local
 	 * @param {string} apiKeyHash
+	 * @param {Record<string, any> | undefined} mcpServers Cursor-shaped MCP servers (data-plane gateway entry)
+	 * @param {string} mcpSig Signature of mcpServers incl. per-turn auth (cache-bust key)
 	 */
-	async #openAgent(Agent, CursorAgentError, turn, apiKey, model, local, apiKeyHash) {
+	async #openAgent(Agent, CursorAgentError, turn, apiKey, model, local, apiKeyHash, mcpServers, mcpSig) {
+		const mcpOpt = mcpServers ? { mcpServers } : {};
 		const nativeId = turn.session.nativeSessionId?.trim();
 		if (nativeId) {
 			try {
-				const agent = await Agent.resume(nativeId, { apiKey, model, local });
-				turn.runtime.logger.info(`[Cursor SDK] Resumed agent ${nativeId}`);
-				return { agent, nativeSessionId: agent.agentId, apiKeyHash, lastUsedAt: Date.now() };
+				const agent = await Agent.resume(nativeId, { apiKey, model, local, ...mcpOpt });
+				turn.runtime.logger.info(`[Cursor SDK] Resumed agent ${nativeId}${mcpServers ? ` (mcp: ${Object.keys(mcpServers).join(',')})` : ''}`);
+				return { agent, nativeSessionId: agent.agentId, apiKeyHash, mcpSig, lastUsedAt: Date.now() };
 			} catch (err) {
 				if (!(err instanceof CursorAgentError)) {
 					throw err;
@@ -486,9 +548,9 @@ export class CursorSdkEngine {
 			}
 		}
 
-		const agent = await Agent.create({ apiKey, model, local });
-		turn.runtime.logger.info(`[Cursor SDK] Created agent ${agent.agentId} cwd=${turn.workspaceRoot}`);
-		return { agent, nativeSessionId: agent.agentId, apiKeyHash, lastUsedAt: Date.now() };
+		const agent = await Agent.create({ apiKey, model, local, ...mcpOpt });
+		turn.runtime.logger.info(`[Cursor SDK] Created agent ${agent.agentId} cwd=${turn.workspaceRoot}${mcpServers ? ` (mcp: ${Object.keys(mcpServers).join(',')})` : ''}`);
+		return { agent, nativeSessionId: agent.agentId, apiKeyHash, mcpSig, lastUsedAt: Date.now() };
 	}
 
 	/**

@@ -1,0 +1,27 @@
+# Generated from Agent Pack cost-guard-demo@1.1.0 — packs.agenthippo.ai
+apiVersion: agenthippo.ai/v1
+kind: Agent
+metadata:
+  name: cost-guard-demo
+  version: 1.1.0
+  author: agenthippo.ai
+  description: Verbose support analyst — intentional token-cost regression for rollback demos
+  tags:
+    - demo
+    - support
+    - version-rollback
+
+spec:
+  engine: claude
+  model: ah-auto
+
+  skills: []
+
+  prompts:
+    system: ./AGENTS.md
+    rules: []
+
+  permissions:
+    fileAccess: read-only
+
+  visibility: internal
