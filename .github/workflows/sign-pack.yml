@@ -35,6 +35,15 @@ permissions:
 jobs:
   sign:
     runs-on: ubuntu-latest
+    # PACK_SIGNING_PRIVATE_PEM is scoped to this environment, NOT to the repository. That is
+    # what makes signing a reviewed act instead of a side effect of push access: the job pauses
+    # here until a required reviewer approves, and the approval is recorded against the run.
+    # Repo-wide, the secret was readable by any workflow anyone could land — and a secret in a
+    # PUBLIC repo's Actions is exfiltratable by whoever can merge a workflow change, since log
+    # masking is defeated by base64/splitting. Scoping it does not stop a repo admin from
+    # editing the environment, so this is a higher bar, not a true trust boundary; the real
+    # boundary is a KMS/OIDC signer where no private key exists as a file at all.
+    environment: release
     env:
       RUNTIME_IMAGE: ghcr.io/agenthippoai/runtime:1.110.9
       PACK: ${{ inputs.pack }}
