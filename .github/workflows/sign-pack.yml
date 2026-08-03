@@ -12,12 +12,16 @@
 # "this content is a release". Verify Pack Signatures then keeps that assertion honest on
 # every subsequent push.
 #
-# The private half lives in the PACK_SIGNING_PRIVATE_PEM repository secret. Note what that
-# means: anyone who can merge a workflow change to this PUBLIC repo can make CI sign arbitrary
-# content, so "can push to agenthippo-store" implies "can sign a store pack". That is an
-# acceptable trade for the threat this actually defends — a pack modified in transit, on a
-# mirror, or on a deploy host after release — but it is NOT protection against a malicious
-# maintainer. Restrict who can approve workflow changes accordingly.
+# The private half is PACK_SIGNING_PRIVATE_PEM, scoped to the `release` ENVIRONMENT (see the
+# job below), not to the repository. Repo-wide it would be readable by any workflow anyone
+# could land — and in a PUBLIC repo a secret is exfiltratable by whoever can merge a workflow
+# change, because log masking is defeated by base64/splitting.
+#
+# Even scoped, understand what this does and does not defend. It defends the DISTRIBUTION
+# path: a pack modified on a mirror, a CDN, a deploy host, or a checked-out directory still
+# fails verification. It does NOT defend against a malicious maintainer — a repo admin can
+# edit the environment. The real boundary is a KMS/OIDC signer where no private key exists as
+# a file at all; this is the cheap step available today.
 name: Sign Pack
 
 on:
@@ -88,8 +92,11 @@ jobs:
           ( umask 077; printf '%s\n' "$PACK_SIGNING_PRIVATE_PEM" > "$KEY" )
           docker pull -q "$RUNTIME_IMAGE"
           echo "digest before signing:"
-          docker run --rm -v "$PWD/agent-packs/${PACK}:/pack:ro" "$RUNTIME_IMAGE" pack digest /pack
-          docker run --rm \
+          docker run --rm --user "$(id -u):$(id -g)" -v "$PWD/agent-packs/${PACK}:/pack:ro" "$RUNTIME_IMAGE" pack digest /pack
+          # --user: the image runs as uid 10001 (agent), but $KEY is 0600 owned by the runner.
+          # Without this the container cannot read its own key file -> EACCES. This is invisible
+          # on macOS, where Docker Desktop maps uids; it fails on every Linux host.
+          docker run --rm --user "$(id -u):$(id -g)" \
             -v "$PWD/agent-packs/${PACK}:/pack" \
             -v "$KEY:/key.pem:ro" \
             "$RUNTIME_IMAGE" pack sign /pack --key /key.pem --kid "$PACK_SIGNING_KID"
@@ -107,7 +114,7 @@ jobs:
           import json, os
           print(json.dumps({os.environ["PACK_SIGNING_KID"]: os.environ["PACK_SIGNING_PUBLIC_PEM"]}))
           PY
-          docker run --rm \
+          docker run --rm --user "$(id -u):$(id -g)" \
             -v "$PWD/agent-packs/${PACK}:/pack:ro" \
             -v "${RUNNER_TEMP}/keys.json:/keys.json:ro" \
             "$RUNTIME_IMAGE" pack verify /pack --keys /keys.json
