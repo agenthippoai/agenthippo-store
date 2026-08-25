@@ -1,0 +1,11 @@
+{
+  "name": "mcp-postgres-rls",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Postgres RLS connector for the agenthippo serve data-plane gateway (broker-side, SET LOCAL ROLE per verified user)",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.3",
+    "pg": "^8.13.0"
+  }
+}

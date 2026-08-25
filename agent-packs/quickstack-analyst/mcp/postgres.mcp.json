@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "postgres": {
+      "description": "Per-user Postgres via the serve data-plane gateway (SELECT-only, RLS-enforced rows). URL from AGENTHIPPO_DATA_MCP_URL (set by compose); tier-0 sandboxes inherit it via baseSandboxEnv (runtime ≥1.110.10). Turn auth rides AGENTHIPPO_TURN_NONCE per request.",
+      "url": "${env:AGENTHIPPO_DATA_MCP_URL}",
+      "bearerTokenEnv": "AGENTHIPPO_TURN_NONCE"
+    }
+  }
+}

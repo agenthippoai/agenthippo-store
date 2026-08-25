@@ -1,0 +1,41 @@
+apiVersion: agenthippo.ai/v1
+kind: Agent
+metadata:
+  name: quickstack-analyst
+  version: 0.2.0
+  author: AgentHippo
+  description: Read-only orders analyst — per-user rows enforced by Postgres RLS, no per-user secrets anywhere.
+  tags:
+    - data
+    - postgres
+    - rls
+    - per-user-permissions
+    - data-plane
+    - demo
+
+spec:
+  engine: codex
+  # The gateway resolves `ah-auto` per engine, so swapping engines needs no model change here.
+  model: ah-auto
+
+  prompts:
+    system: ./AGENTS.md
+
+  permissions:
+    # Claude maps read-only → permissionMode=plan, which blocks MCP tool calls entirely.
+    # workspace-write → acceptEdits: MCP works; codex still maps to read-only sandboxMode.
+    fileAccess: workspace-write
+
+  mcp:
+    - name: postgres
+      config: ./mcp/postgres.mcp.json
+
+  # provider=identity: there is no portable per-user secret at all. The connector maps the
+  # VERIFIED user to a DB role inside each query's transaction; Postgres RLS enforces which
+  # rows come back — at the data layer, never in the prompt.
+  #
+  # serve registers the turn, hands the sandboxed engine only a per-turn nonce, and the engine
+  # never sees a database credential — the same way it never sees a model credential.
+  dataPlane:
+    connector: ./mcp/mcp-postgres-rls/server.mjs
+    provider: identity
