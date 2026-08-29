@@ -17,6 +17,7 @@ spec:
   model: claude-sonnet-4
 
   skills:
+    - path: ./skills/agentic-workflow
     - path: ./skills/star-pipeline
 
   data:
