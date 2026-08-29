@@ -1,15 +1,15 @@
 {
-  "generatedAt": "2026-06-02T19:30:46.932Z",
+  "generatedAt": "2026-06-05T22:54:26.052Z",
   "source": "live-fleet-4",
   "totals": {
-    "workflows": 8,
+    "workflows": 3,
     "running": 0,
-    "finished": 8,
-    "history": 8,
+    "finished": 3,
+    "history": 3,
     "inProgress": 0,
-    "done": 8,
-    "stepsTotal": 22,
-    "stepsDone": 22,
+    "done": 3,
+    "stepsTotal": 9,
+    "stepsDone": 7,
     "stepsActive": 0
   },
   "running": [],
@@ -17,345 +17,21 @@
   "history": [
     {
       "workflowId": "star-pipeline",
-      "runId": "20260602-193036",
+      "runId": "20260605-224413",
       "title": "GitHub Star Pipeline",
-      "subtitle": "pytorch/torchtitan",
+      "subtitle": "openclaw/openclaw (30d)",
       "status": "done",
       "kind": "history",
-      "startedAt": "2026-06-02T19:30:36Z",
-      "updatedAt": "2026-06-02T19:30:46Z",
-      "finishedAt": "2026-06-02T19:30:46Z",
-      "archivedAt": "2026-06-02T19:30:46Z",
-      "artifact": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260602-193036.json",
+      "startedAt": "2026-06-05T22:44:13Z",
+      "updatedAt": "2026-06-05T22:54:25Z",
+      "finishedAt": "2026-06-05T22:54:25Z",
+      "archivedAt": "2026-06-05T22:54:25Z",
+      "artifact": "/Users/tom/dev/demo/projectx/.agent-hippo/fleet-workflows/history/star-pipeline-20260605-224413.json",
       "orchestrator": {
         "agent": "star-coordinator",
         "label": "Star Coordinator",
         "status": "done",
-        "summary": "Pipeline complete for pytorch/torchtitan (30 days)"
-      },
-      "steps": [
-        {
-          "step": 2,
-          "role": "worker",
-          "agent": "github-star",
-          "label": "Collect 30-day stars",
-          "status": "done",
-          "summary": "CSV: agenthippo-pytorch-torchtitan-star-history.csv (31 lines, 119 new stars)",
-          "startedAt": "2026-06-02T19:30:36Z",
-          "finishedAt": "2026-06-02T19:30:46Z",
-          "artifact": "/Users/tom/dev/agenthippo-vscode/data/github-star/agenthippo-pytorch-torchtitan-star-history.csv",
-          "color": "#38bdf8"
-        },
-        {
-          "step": 3,
-          "role": "worker",
-          "agent": "star-visualizer",
-          "label": "Plot star history",
-          "status": "done",
-          "summary": "Purple 30-day chart for pytorch/torchtitan",
-          "startedAt": "2026-06-02T19:30:46Z",
-          "finishedAt": "2026-06-02T19:30:46Z",
-          "artifact": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/analytics/views/star-visualizer/charts/star-data-widget.html",
-          "color": "#a78bfa"
-        }
-      ],
-      "workspaceRoot": "/Users/tom/dev/agenthippo-vscode",
-      "sourcePath": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260602-193036.json"
-    },
-    {
-      "workflowId": "star-pipeline",
-      "runId": "20260602-192301",
-      "title": "GitHub Star Pipeline",
-      "subtitle": "pytorch/pytorch",
-      "status": "done",
-      "kind": "history",
-      "startedAt": "2026-06-02T19:23:01Z",
-      "updatedAt": "2026-06-02T19:23:22Z",
-      "finishedAt": "2026-06-02T19:23:22Z",
-      "archivedAt": "2026-06-02T19:23:22Z",
-      "artifact": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260602-192301.json",
-      "orchestrator": {
-        "agent": "star-coordinator",
-        "label": "Star Coordinator",
-        "status": "done",
-        "summary": "Pipeline complete for pytorch/pytorch (30 days)"
-      },
-      "steps": [
-        {
-          "step": 1,
-          "role": "worker",
-          "agent": "joker1",
-          "label": "Warm-up joke",
-          "status": "done",
-          "summary": "Why did PyTorch break up with TensorFlow? Too many dimensions to their relationship.",
-          "startedAt": "2026-06-02T19:23:01Z",
-          "finishedAt": "2026-06-02T19:23:01Z",
-          "artifact": "",
-          "color": "#fbbf24"
-        },
-        {
-          "step": 2,
-          "role": "worker",
-          "agent": "github-star",
-          "label": "Collect 30-day stars",
-          "status": "done",
-          "summary": "CSV: agenthippo-pytorch-pytorch-star-history.csv (31 lines, 938 new stars)",
-          "startedAt": "2026-06-02T19:23:01Z",
-          "finishedAt": "2026-06-02T19:23:22Z",
-          "artifact": "/Users/tom/dev/agenthippo-vscode/data/github-star/agenthippo-pytorch-pytorch-star-history.csv",
-          "color": "#38bdf8"
-        },
-        {
-          "step": 3,
-          "role": "worker",
-          "agent": "star-visualizer",
-          "label": "Plot star history",
-          "status": "done",
-          "summary": "Purple 30-day chart for pytorch/pytorch",
-          "startedAt": "2026-06-02T19:23:22Z",
-          "finishedAt": "2026-06-02T19:23:22Z",
-          "artifact": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/analytics/views/star-visualizer/charts/star-data-widget.html",
-          "color": "#a78bfa"
-        }
-      ],
-      "workspaceRoot": "/Users/tom/dev/agenthippo-vscode",
-      "sourcePath": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260602-192301.json"
-    },
-    {
-      "workflowId": "star-pipeline",
-      "runId": "20260531-100357",
-      "title": "GitHub Star Pipeline",
-      "subtitle": "agenthippoai/agenthippo-vscode",
-      "status": "done",
-      "kind": "history",
-      "startedAt": "2026-05-31T10:03:57Z",
-      "updatedAt": "2026-05-31T10:04:42Z",
-      "finishedAt": "2026-05-31T10:04:42Z",
-      "archivedAt": "2026-05-31T10:04:42Z",
-      "artifact": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260531-100357.json",
-      "orchestrator": {
-        "agent": "star-coordinator",
-        "label": "Star Coordinator",
-        "status": "done",
-        "summary": "Pipeline complete for agenthippoai/agenthippo-store"
-      },
-      "steps": [
-        {
-          "step": 1,
-          "role": "worker",
-          "agent": "joker1",
-          "label": "Warm-up joke",
-          "status": "done",
-          "summary": "Why do programmers prefer dark mode? Because light attracts bugs.",
-          "startedAt": "2026-05-31T10:04:01Z",
-          "finishedAt": "2026-05-31T10:04:01Z",
-          "artifact": "",
-          "color": "#fbbf24"
-        },
-        {
-          "step": 2,
-          "role": "worker",
-          "agent": "github-star",
-          "label": "Collect 7-day stars",
-          "status": "done",
-          "summary": "7-day CSV: data/github-star/agenthippo-agenthippoai-agenthippo-store-star-history.csv (0 new stars)",
-          "startedAt": "2026-05-31T10:04:03Z",
-          "finishedAt": "2026-05-31T10:04:35Z",
-          "artifact": "",
-          "color": "#38bdf8"
-        },
-        {
-          "step": 3,
-          "role": "worker",
-          "agent": "star-visualizer",
-          "label": "Plot star history",
-          "status": "done",
-          "summary": "Purple chart: .agent-hippo/analytics/views/star-visualizer/charts/star-data-widget.html",
-          "startedAt": "2026-05-31T10:04:35Z",
-          "finishedAt": "2026-05-31T10:04:42Z",
-          "artifact": "",
-          "color": "#a78bfa"
-        }
-      ],
-      "workspaceRoot": "/Users/tom/dev/agenthippo-vscode",
-      "sourcePath": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260531-100357.json"
-    },
-    {
-      "workflowId": "star-pipeline",
-      "runId": "20260530-214649",
-      "title": "GitHub Star Pipeline",
-      "subtitle": "vercel/next.js",
-      "status": "done",
-      "kind": "history",
-      "startedAt": "2026-05-30T21:46:49Z",
-      "updatedAt": "2026-05-30T21:47:38Z",
-      "finishedAt": "2026-05-30T21:47:38Z",
-      "archivedAt": "2026-05-30T21:47:38Z",
-      "artifact": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260530-214649.json",
-      "orchestrator": {
-        "agent": "star-coordinator",
-        "label": "Star Coordinator",
-        "status": "done",
-        "summary": "Pipeline complete for vercel/next.js"
-      },
-      "steps": [
-        {
-          "step": 1,
-          "role": "worker",
-          "agent": "joker1",
-          "label": "Warm-up joke",
-          "status": "done",
-          "summary": "Why did the Next.js dev refuse to commit on Friday?",
-          "startedAt": "2026-05-30T21:46:08Z",
-          "finishedAt": "2026-05-30T21:47:03Z",
-          "artifact": "/Users/tom/dev/agenthippo-vscode/data/fleet-live/step-1-joker1.txt",
-          "color": "#fbbf24"
-        },
-        {
-          "step": 2,
-          "role": "worker",
-          "agent": "github-star",
-          "label": "Collect 7-day stars",
-          "status": "done",
-          "summary": "CSV: agenthippo-vercel-next.js-star-history.csv (8 lines)",
-          "startedAt": "2026-05-30T21:46:24Z",
-          "finishedAt": "2026-05-30T21:47:23Z",
-          "artifact": "/Users/tom/dev/agenthippo-vscode/data/github-star/agenthippo-vercel-next.js-star-history.csv",
-          "color": "#38bdf8"
-        },
-        {
-          "step": 3,
-          "role": "worker",
-          "agent": "star-visualizer",
-          "label": "Plot star history",
-          "status": "done",
-          "summary": "Purple chart for vercel/next.js",
-          "startedAt": "2026-05-30T21:47:23Z",
-          "finishedAt": "2026-05-30T21:47:38Z",
-          "artifact": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/analytics/views/star-visualizer/charts/star-data-widget.html",
-          "color": "#a78bfa"
-        }
-      ],
-      "workspaceRoot": "/Users/tom/dev/agenthippo-vscode",
-      "sourcePath": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260530-214649.json"
-    },
-    {
-      "workflowId": "star-pipeline",
-      "runId": "20260530-213014",
-      "title": "GitHub Star Pipeline",
-      "subtitle": "facebook/react",
-      "status": "done",
-      "kind": "history",
-      "startedAt": "2026-05-30T21:30:14Z",
-      "updatedAt": "2026-05-30T21:30:34Z",
-      "finishedAt": "2026-05-30T21:30:34Z",
-      "archivedAt": "2026-05-30T21:30:34Z",
-      "artifact": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260530-213014.json",
-      "orchestrator": {
-        "agent": "star-coordinator",
-        "label": "Star Coordinator",
-        "status": "done",
-        "summary": "Pipeline complete for facebook/react"
-      },
-      "steps": [
-        {
-          "step": 1,
-          "role": "worker",
-          "agent": "joker1",
-          "label": "Warm-up joke",
-          "status": "done",
-          "summary": "Why did React cross the road? To re-render the other side.",
-          "color": "#fbbf24"
-        },
-        {
-          "step": 2,
-          "role": "worker",
-          "agent": "github-star",
-          "label": "Collect 7-day stars",
-          "status": "done",
-          "summary": "CSV: agenthippo-facebook-react-star-history.csv (8 lines)",
-          "color": "#38bdf8"
-        },
-        {
-          "step": 3,
-          "role": "worker",
-          "agent": "star-visualizer",
-          "label": "Plot star history",
-          "status": "done",
-          "summary": "Purple chart for facebook/react",
-          "color": "#a78bfa"
-        }
-      ],
-      "workspaceRoot": "/Users/tom/dev/agenthippo-vscode",
-      "sourcePath": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260530-213014.json"
-    },
-    {
-      "workflowId": "star-pipeline",
-      "runId": "20260530-213000",
-      "title": "GitHub Star Pipeline",
-      "subtitle": "facebook/react",
-      "status": "done",
-      "kind": "history",
-      "startedAt": "2026-05-30T21:30:00Z",
-      "updatedAt": "2026-05-30T21:30:04Z",
-      "finishedAt": "2026-05-30T21:30:04Z",
-      "archivedAt": "2026-05-30T21:30:04Z",
-      "artifact": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260530-213000.json",
-      "orchestrator": {
-        "agent": "star-coordinator",
-        "label": "Star Coordinator",
-        "status": "done",
-        "summary": "Pipeline complete for facebook/react"
-      },
-      "steps": [
-        {
-          "step": 1,
-          "role": "worker",
-          "agent": "joker1",
-          "label": "Warm-up joke",
-          "status": "done",
-          "summary": "Credit balance is too low",
-          "color": "#fbbf24"
-        },
-        {
-          "step": 2,
-          "role": "worker",
-          "agent": "github-star",
-          "label": "Collect 7-day stars",
-          "status": "done",
-          "summary": "CSV: agenthippo-openai-codex-star-history.csv (8 lines)",
-          "color": "#38bdf8"
-        },
-        {
-          "step": 3,
-          "role": "worker",
-          "agent": "star-visualizer",
-          "label": "Plot star history",
-          "status": "done",
-          "summary": "Purple chart ready",
-          "color": "#a78bfa"
-        }
-      ],
-      "workspaceRoot": "/Users/tom/dev/agenthippo-vscode",
-      "sourcePath": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260530-213000.json"
-    },
-    {
-      "workflowId": "star-pipeline",
-      "runId": "20260530-183647",
-      "title": "GitHub Star Pipeline",
-      "subtitle": "openai/codex (live test)",
-      "status": "done",
-      "kind": "history",
-      "startedAt": "2026-05-30T18:36:47Z",
-      "updatedAt": "2026-05-30T19:33:05Z",
-      "finishedAt": "2026-05-30T19:33:05Z",
-      "archivedAt": "2026-05-30T19:33:05Z",
-      "artifact": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260530-183647.json",
-      "orchestrator": {
-        "agent": "star-coordinator",
-        "label": "Star Coordinator",
-        "status": "done",
-        "summary": "Interrupted — orphaned run cleared manually"
+        "summary": "Pipeline complete for openclaw/openclaw"
       },
       "steps": [
         {
@@ -365,56 +41,21 @@
           "label": "Warm-up joke",
           "status": "done",
           "summary": "Joke delivered",
+          "startedAt": "2026-06-05T22:44:16Z",
+          "finishedAt": "2026-06-05T22:44:43Z",
+          "artifact": "",
           "color": "#fbbf24"
         },
         {
           "step": 2,
           "role": "worker",
-          "agent": "github-star",
-          "label": "Collect 7-day stars",
+          "agent": "github-star-history",
+          "label": "Collect 30-day stars",
           "status": "done",
-          "summary": "Collecting openai/codex...",
-          "color": "#38bdf8"
-        }
-      ],
-      "workspaceRoot": "/Users/tom/dev/agenthippo-vscode",
-      "sourcePath": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260530-183647.json"
-    },
-    {
-      "workflowId": "star-pipeline",
-      "runId": "182847",
-      "title": "GitHub Star Pipeline",
-      "subtitle": "openai/codex",
-      "status": "done",
-      "kind": "history",
-      "startedAt": "2026-05-30T18:28:47Z",
-      "updatedAt": "2026-05-30T18:36:47Z",
-      "finishedAt": "2026-05-30T18:36:47Z",
-      "archivedAt": "2026-05-30T18:36:47Z",
-      "artifact": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260530-182847.json",
-      "orchestrator": {
-        "agent": "star-coordinator",
-        "label": "Star Coordinator",
-        "status": "done",
-        "summary": "openai/codex archived test"
-      },
-      "steps": [
-        {
-          "step": 1,
-          "role": "worker",
-          "agent": "joker1",
-          "label": "Warm-up joke",
-          "status": "done",
-          "summary": "Why do GitHub repos never feel lonely? Stars still show up.",
-          "color": "#fbbf24"
-        },
-        {
-          "step": 2,
-          "role": "worker",
-          "agent": "github-star",
-          "label": "Collect 7-day stars",
-          "status": "done",
-          "summary": "7-day CSV: 2323 new stars, repo total 87103",
+          "summary": "CSV ready",
+          "startedAt": "2026-06-05T22:44:45Z",
+          "finishedAt": "2026-06-05T22:53:56Z",
+          "artifact": "/Users/tom/dev/demo/projectx/data/github-star/openclaw-openclaw-star-history.csv",
           "color": "#38bdf8"
         },
         {
@@ -423,356 +64,153 @@
           "agent": "star-visualizer",
           "label": "Plot star history",
           "status": "done",
-          "summary": "Purple chart for openai/codex (7-day stars)",
+          "summary": "Chart ready",
+          "startedAt": "2026-06-05T22:53:58Z",
+          "finishedAt": "2026-06-05T22:54:25Z",
+          "artifact": "",
           "color": "#a78bfa"
         }
       ],
-      "workspaceRoot": "/Users/tom/dev/agenthippo-vscode",
-      "sourcePath": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260530-182847.json"
+      "workspaceRoot": "/Users/tom/dev/demo/projectx",
+      "sourcePath": "/Users/tom/dev/demo/projectx/.agent-hippo/fleet-workflows/history/star-pipeline-20260605-224413.json"
+    },
+    {
+      "workflowId": "star-pipeline",
+      "runId": "20260605-223339",
+      "title": "GitHub Star Pipeline",
+      "subtitle": "fishaudio/fish-speech (30 days)",
+      "status": "done",
+      "kind": "history",
+      "startedAt": "2026-06-05T22:33:39Z",
+      "updatedAt": "2026-06-05T22:36:16Z",
+      "finishedAt": "2026-06-05T22:36:16Z",
+      "archivedAt": "2026-06-05T22:36:16Z",
+      "artifact": "/Users/tom/dev/demo/projectx/.agent-hippo/fleet-workflows/history/star-pipeline-20260605-223339.json",
+      "orchestrator": {
+        "agent": "star-coordinator",
+        "label": "Star Coordinator",
+        "status": "done",
+        "summary": "fishaudio/fish-speech: 668 stars in 30 days, chart ready"
+      },
+      "steps": [
+        {
+          "step": 1,
+          "role": "worker",
+          "agent": "joker1",
+          "label": "Warm-up joke",
+          "status": "done",
+          "summary": "Joke delivered",
+          "startedAt": "2026-06-05T22:33:41Z",
+          "finishedAt": "2026-06-05T22:34:49Z",
+          "artifact": "",
+          "color": "#fbbf24"
+        },
+        {
+          "step": 2,
+          "role": "worker",
+          "agent": "github-star-history",
+          "label": "Collect 30-day stars",
+          "status": "done",
+          "summary": "668 stars over 30 days",
+          "startedAt": "2026-06-05T22:34:51Z",
+          "finishedAt": "2026-06-05T22:35:51Z",
+          "artifact": "/Users/tom/dev/demo/projectx/data/github-star/fishaudio-fish-speech-star-history.csv",
+          "color": "#38bdf8"
+        },
+        {
+          "step": 3,
+          "role": "worker",
+          "agent": "star-visualizer",
+          "label": "Plot star history",
+          "status": "done",
+          "summary": "Purple chart in Spotlight",
+          "startedAt": "2026-06-05T22:35:51Z",
+          "finishedAt": "2026-06-05T22:36:15Z",
+          "artifact": "/Users/tom/dev/demo/projectx/.agent-hippo/analytics/views/star-visualizer/charts/star-data-widget.html",
+          "color": "#a78bfa"
+        }
+      ],
+      "workspaceRoot": "/Users/tom/dev/demo/projectx",
+      "sourcePath": "/Users/tom/dev/demo/projectx/.agent-hippo/fleet-workflows/history/star-pipeline-20260605-223339.json"
+    },
+    {
+      "workflowId": "star-pipeline",
+      "runId": "20260605-220504",
+      "title": "GitHub Star Pipeline",
+      "subtitle": "fishaudio/fish-speech (30 days)",
+      "status": "done",
+      "kind": "history",
+      "startedAt": "2026-06-05T22:05:04.268184Z",
+      "updatedAt": "2026-06-05T22:31:23Z",
+      "finishedAt": "2026-06-05T22:31:23Z",
+      "archivedAt": "2026-06-05T22:31:23Z",
+      "artifact": "/Users/tom/dev/demo/projectx/.agent-hippo/fleet-workflows/history/star-pipeline-20260605-220504.json",
+      "orchestrator": {
+        "agent": "star-coordinator",
+        "label": "Star Coordinator",
+        "status": "done",
+        "summary": "Aborted stale run (coordinator never completed step 2)"
+      },
+      "steps": [
+        {
+          "step": 1,
+          "role": "worker",
+          "agent": "joker1",
+          "label": "Warm-up joke",
+          "status": "done",
+          "summary": "test",
+          "startedAt": "",
+          "finishedAt": "2026-06-05T22:19:13Z",
+          "artifact": "",
+          "color": "#fbbf24"
+        },
+        {
+          "step": 2,
+          "role": "worker",
+          "agent": "github-star-history",
+          "label": "Collect 30-day stars",
+          "status": "pending",
+          "summary": "",
+          "startedAt": "",
+          "finishedAt": "",
+          "artifact": "",
+          "color": "#38bdf8"
+        },
+        {
+          "step": 3,
+          "role": "worker",
+          "agent": "star-visualizer",
+          "label": "Plot star history",
+          "status": "pending",
+          "summary": "",
+          "startedAt": "",
+          "finishedAt": "",
+          "artifact": "",
+          "color": "#a78bfa"
+        }
+      ],
+      "workspaceRoot": "/Users/tom/dev/demo/projectx",
+      "sourcePath": "/Users/tom/dev/demo/projectx/.agent-hippo/fleet-workflows/history/star-pipeline-20260605-220504.json"
     }
   ],
   "workflows": [
     {
       "workflowId": "star-pipeline",
-      "runId": "20260602-193036",
+      "runId": "20260605-224413",
       "title": "GitHub Star Pipeline",
-      "subtitle": "pytorch/torchtitan",
+      "subtitle": "openclaw/openclaw (30d)",
       "status": "done",
       "kind": "history",
-      "startedAt": "2026-06-02T19:30:36Z",
-      "updatedAt": "2026-06-02T19:30:46Z",
-      "finishedAt": "2026-06-02T19:30:46Z",
-      "archivedAt": "2026-06-02T19:30:46Z",
-      "artifact": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260602-193036.json",
+      "startedAt": "2026-06-05T22:44:13Z",
+      "updatedAt": "2026-06-05T22:54:25Z",
+      "finishedAt": "2026-06-05T22:54:25Z",
+      "archivedAt": "2026-06-05T22:54:25Z",
+      "artifact": "/Users/tom/dev/demo/projectx/.agent-hippo/fleet-workflows/history/star-pipeline-20260605-224413.json",
       "orchestrator": {
         "agent": "star-coordinator",
         "label": "Star Coordinator",
         "status": "done",
-        "summary": "Pipeline complete for pytorch/torchtitan (30 days)"
-      },
-      "steps": [
-        {
-          "step": 2,
-          "role": "worker",
-          "agent": "github-star",
-          "label": "Collect 30-day stars",
-          "status": "done",
-          "summary": "CSV: agenthippo-pytorch-torchtitan-star-history.csv (31 lines, 119 new stars)",
-          "startedAt": "2026-06-02T19:30:36Z",
-          "finishedAt": "2026-06-02T19:30:46Z",
-          "artifact": "/Users/tom/dev/agenthippo-vscode/data/github-star/agenthippo-pytorch-torchtitan-star-history.csv",
-          "color": "#38bdf8"
-        },
-        {
-          "step": 3,
-          "role": "worker",
-          "agent": "star-visualizer",
-          "label": "Plot star history",
-          "status": "done",
-          "summary": "Purple 30-day chart for pytorch/torchtitan",
-          "startedAt": "2026-06-02T19:30:46Z",
-          "finishedAt": "2026-06-02T19:30:46Z",
-          "artifact": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/analytics/views/star-visualizer/charts/star-data-widget.html",
-          "color": "#a78bfa"
-        }
-      ],
-      "workspaceRoot": "/Users/tom/dev/agenthippo-vscode",
-      "sourcePath": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260602-193036.json"
-    },
-    {
-      "workflowId": "star-pipeline",
-      "runId": "20260602-192301",
-      "title": "GitHub Star Pipeline",
-      "subtitle": "pytorch/pytorch",
-      "status": "done",
-      "kind": "history",
-      "startedAt": "2026-06-02T19:23:01Z",
-      "updatedAt": "2026-06-02T19:23:22Z",
-      "finishedAt": "2026-06-02T19:23:22Z",
-      "archivedAt": "2026-06-02T19:23:22Z",
-      "artifact": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260602-192301.json",
-      "orchestrator": {
-        "agent": "star-coordinator",
-        "label": "Star Coordinator",
-        "status": "done",
-        "summary": "Pipeline complete for pytorch/pytorch (30 days)"
-      },
-      "steps": [
-        {
-          "step": 1,
-          "role": "worker",
-          "agent": "joker1",
-          "label": "Warm-up joke",
-          "status": "done",
-          "summary": "Why did PyTorch break up with TensorFlow? Too many dimensions to their relationship.",
-          "startedAt": "2026-06-02T19:23:01Z",
-          "finishedAt": "2026-06-02T19:23:01Z",
-          "artifact": "",
-          "color": "#fbbf24"
-        },
-        {
-          "step": 2,
-          "role": "worker",
-          "agent": "github-star",
-          "label": "Collect 30-day stars",
-          "status": "done",
-          "summary": "CSV: agenthippo-pytorch-pytorch-star-history.csv (31 lines, 938 new stars)",
-          "startedAt": "2026-06-02T19:23:01Z",
-          "finishedAt": "2026-06-02T19:23:22Z",
-          "artifact": "/Users/tom/dev/agenthippo-vscode/data/github-star/agenthippo-pytorch-pytorch-star-history.csv",
-          "color": "#38bdf8"
-        },
-        {
-          "step": 3,
-          "role": "worker",
-          "agent": "star-visualizer",
-          "label": "Plot star history",
-          "status": "done",
-          "summary": "Purple 30-day chart for pytorch/pytorch",
-          "startedAt": "2026-06-02T19:23:22Z",
-          "finishedAt": "2026-06-02T19:23:22Z",
-          "artifact": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/analytics/views/star-visualizer/charts/star-data-widget.html",
-          "color": "#a78bfa"
-        }
-      ],
-      "workspaceRoot": "/Users/tom/dev/agenthippo-vscode",
-      "sourcePath": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260602-192301.json"
-    },
-    {
-      "workflowId": "star-pipeline",
-      "runId": "20260531-100357",
-      "title": "GitHub Star Pipeline",
-      "subtitle": "agenthippoai/agenthippo-vscode",
-      "status": "done",
-      "kind": "history",
-      "startedAt": "2026-05-31T10:03:57Z",
-      "updatedAt": "2026-05-31T10:04:42Z",
-      "finishedAt": "2026-05-31T10:04:42Z",
-      "archivedAt": "2026-05-31T10:04:42Z",
-      "artifact": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260531-100357.json",
-      "orchestrator": {
-        "agent": "star-coordinator",
-        "label": "Star Coordinator",
-        "status": "done",
-        "summary": "Pipeline complete for agenthippoai/agenthippo-store"
-      },
-      "steps": [
-        {
-          "step": 1,
-          "role": "worker",
-          "agent": "joker1",
-          "label": "Warm-up joke",
-          "status": "done",
-          "summary": "Why do programmers prefer dark mode? Because light attracts bugs.",
-          "startedAt": "2026-05-31T10:04:01Z",
-          "finishedAt": "2026-05-31T10:04:01Z",
-          "artifact": "",
-          "color": "#fbbf24"
-        },
-        {
-          "step": 2,
-          "role": "worker",
-          "agent": "github-star",
-          "label": "Collect 7-day stars",
-          "status": "done",
-          "summary": "7-day CSV: data/github-star/agenthippo-agenthippoai-agenthippo-store-star-history.csv (0 new stars)",
-          "startedAt": "2026-05-31T10:04:03Z",
-          "finishedAt": "2026-05-31T10:04:35Z",
-          "artifact": "",
-          "color": "#38bdf8"
-        },
-        {
-          "step": 3,
-          "role": "worker",
-          "agent": "star-visualizer",
-          "label": "Plot star history",
-          "status": "done",
-          "summary": "Purple chart: .agent-hippo/analytics/views/star-visualizer/charts/star-data-widget.html",
-          "startedAt": "2026-05-31T10:04:35Z",
-          "finishedAt": "2026-05-31T10:04:42Z",
-          "artifact": "",
-          "color": "#a78bfa"
-        }
-      ],
-      "workspaceRoot": "/Users/tom/dev/agenthippo-vscode",
-      "sourcePath": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260531-100357.json"
-    },
-    {
-      "workflowId": "star-pipeline",
-      "runId": "20260530-214649",
-      "title": "GitHub Star Pipeline",
-      "subtitle": "vercel/next.js",
-      "status": "done",
-      "kind": "history",
-      "startedAt": "2026-05-30T21:46:49Z",
-      "updatedAt": "2026-05-30T21:47:38Z",
-      "finishedAt": "2026-05-30T21:47:38Z",
-      "archivedAt": "2026-05-30T21:47:38Z",
-      "artifact": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260530-214649.json",
-      "orchestrator": {
-        "agent": "star-coordinator",
-        "label": "Star Coordinator",
-        "status": "done",
-        "summary": "Pipeline complete for vercel/next.js"
-      },
-      "steps": [
-        {
-          "step": 1,
-          "role": "worker",
-          "agent": "joker1",
-          "label": "Warm-up joke",
-          "status": "done",
-          "summary": "Why did the Next.js dev refuse to commit on Friday?",
-          "startedAt": "2026-05-30T21:46:08Z",
-          "finishedAt": "2026-05-30T21:47:03Z",
-          "artifact": "/Users/tom/dev/agenthippo-vscode/data/fleet-live/step-1-joker1.txt",
-          "color": "#fbbf24"
-        },
-        {
-          "step": 2,
-          "role": "worker",
-          "agent": "github-star",
-          "label": "Collect 7-day stars",
-          "status": "done",
-          "summary": "CSV: agenthippo-vercel-next.js-star-history.csv (8 lines)",
-          "startedAt": "2026-05-30T21:46:24Z",
-          "finishedAt": "2026-05-30T21:47:23Z",
-          "artifact": "/Users/tom/dev/agenthippo-vscode/data/github-star/agenthippo-vercel-next.js-star-history.csv",
-          "color": "#38bdf8"
-        },
-        {
-          "step": 3,
-          "role": "worker",
-          "agent": "star-visualizer",
-          "label": "Plot star history",
-          "status": "done",
-          "summary": "Purple chart for vercel/next.js",
-          "startedAt": "2026-05-30T21:47:23Z",
-          "finishedAt": "2026-05-30T21:47:38Z",
-          "artifact": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/analytics/views/star-visualizer/charts/star-data-widget.html",
-          "color": "#a78bfa"
-        }
-      ],
-      "workspaceRoot": "/Users/tom/dev/agenthippo-vscode",
-      "sourcePath": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260530-214649.json"
-    },
-    {
-      "workflowId": "star-pipeline",
-      "runId": "20260530-213014",
-      "title": "GitHub Star Pipeline",
-      "subtitle": "facebook/react",
-      "status": "done",
-      "kind": "history",
-      "startedAt": "2026-05-30T21:30:14Z",
-      "updatedAt": "2026-05-30T21:30:34Z",
-      "finishedAt": "2026-05-30T21:30:34Z",
-      "archivedAt": "2026-05-30T21:30:34Z",
-      "artifact": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260530-213014.json",
-      "orchestrator": {
-        "agent": "star-coordinator",
-        "label": "Star Coordinator",
-        "status": "done",
-        "summary": "Pipeline complete for facebook/react"
-      },
-      "steps": [
-        {
-          "step": 1,
-          "role": "worker",
-          "agent": "joker1",
-          "label": "Warm-up joke",
-          "status": "done",
-          "summary": "Why did React cross the road? To re-render the other side.",
-          "color": "#fbbf24"
-        },
-        {
-          "step": 2,
-          "role": "worker",
-          "agent": "github-star",
-          "label": "Collect 7-day stars",
-          "status": "done",
-          "summary": "CSV: agenthippo-facebook-react-star-history.csv (8 lines)",
-          "color": "#38bdf8"
-        },
-        {
-          "step": 3,
-          "role": "worker",
-          "agent": "star-visualizer",
-          "label": "Plot star history",
-          "status": "done",
-          "summary": "Purple chart for facebook/react",
-          "color": "#a78bfa"
-        }
-      ],
-      "workspaceRoot": "/Users/tom/dev/agenthippo-vscode",
-      "sourcePath": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260530-213014.json"
-    },
-    {
-      "workflowId": "star-pipeline",
-      "runId": "20260530-213000",
-      "title": "GitHub Star Pipeline",
-      "subtitle": "facebook/react",
-      "status": "done",
-      "kind": "history",
-      "startedAt": "2026-05-30T21:30:00Z",
-      "updatedAt": "2026-05-30T21:30:04Z",
-      "finishedAt": "2026-05-30T21:30:04Z",
-      "archivedAt": "2026-05-30T21:30:04Z",
-      "artifact": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260530-213000.json",
-      "orchestrator": {
-        "agent": "star-coordinator",
-        "label": "Star Coordinator",
-        "status": "done",
-        "summary": "Pipeline complete for facebook/react"
-      },
-      "steps": [
-        {
-          "step": 1,
-          "role": "worker",
-          "agent": "joker1",
-          "label": "Warm-up joke",
-          "status": "done",
-          "summary": "Credit balance is too low",
-          "color": "#fbbf24"
-        },
-        {
-          "step": 2,
-          "role": "worker",
-          "agent": "github-star",
-          "label": "Collect 7-day stars",
-          "status": "done",
-          "summary": "CSV: agenthippo-openai-codex-star-history.csv (8 lines)",
-          "color": "#38bdf8"
-        },
-        {
-          "step": 3,
-          "role": "worker",
-          "agent": "star-visualizer",
-          "label": "Plot star history",
-          "status": "done",
-          "summary": "Purple chart ready",
-          "color": "#a78bfa"
-        }
-      ],
-      "workspaceRoot": "/Users/tom/dev/agenthippo-vscode",
-      "sourcePath": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260530-213000.json"
-    },
-    {
-      "workflowId": "star-pipeline",
-      "runId": "20260530-183647",
-      "title": "GitHub Star Pipeline",
-      "subtitle": "openai/codex (live test)",
-      "status": "done",
-      "kind": "history",
-      "startedAt": "2026-05-30T18:36:47Z",
-      "updatedAt": "2026-05-30T19:33:05Z",
-      "finishedAt": "2026-05-30T19:33:05Z",
-      "archivedAt": "2026-05-30T19:33:05Z",
-      "artifact": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260530-183647.json",
-      "orchestrator": {
-        "agent": "star-coordinator",
-        "label": "Star Coordinator",
-        "status": "done",
-        "summary": "Interrupted — orphaned run cleared manually"
+        "summary": "Pipeline complete for openclaw/openclaw"
       },
       "steps": [
         {
@@ -782,56 +220,21 @@
           "label": "Warm-up joke",
           "status": "done",
           "summary": "Joke delivered",
+          "startedAt": "2026-06-05T22:44:16Z",
+          "finishedAt": "2026-06-05T22:44:43Z",
+          "artifact": "",
           "color": "#fbbf24"
         },
         {
           "step": 2,
           "role": "worker",
-          "agent": "github-star",
-          "label": "Collect 7-day stars",
+          "agent": "github-star-history",
+          "label": "Collect 30-day stars",
           "status": "done",
-          "summary": "Collecting openai/codex...",
-          "color": "#38bdf8"
-        }
-      ],
-      "workspaceRoot": "/Users/tom/dev/agenthippo-vscode",
-      "sourcePath": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260530-183647.json"
-    },
-    {
-      "workflowId": "star-pipeline",
-      "runId": "182847",
-      "title": "GitHub Star Pipeline",
-      "subtitle": "openai/codex",
-      "status": "done",
-      "kind": "history",
-      "startedAt": "2026-05-30T18:28:47Z",
-      "updatedAt": "2026-05-30T18:36:47Z",
-      "finishedAt": "2026-05-30T18:36:47Z",
-      "archivedAt": "2026-05-30T18:36:47Z",
-      "artifact": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260530-182847.json",
-      "orchestrator": {
-        "agent": "star-coordinator",
-        "label": "Star Coordinator",
-        "status": "done",
-        "summary": "openai/codex archived test"
-      },
-      "steps": [
-        {
-          "step": 1,
-          "role": "worker",
-          "agent": "joker1",
-          "label": "Warm-up joke",
-          "status": "done",
-          "summary": "Why do GitHub repos never feel lonely? Stars still show up.",
-          "color": "#fbbf24"
-        },
-        {
-          "step": 2,
-          "role": "worker",
-          "agent": "github-star",
-          "label": "Collect 7-day stars",
-          "status": "done",
-          "summary": "7-day CSV: 2323 new stars, repo total 87103",
+          "summary": "CSV ready",
+          "startedAt": "2026-06-05T22:44:45Z",
+          "finishedAt": "2026-06-05T22:53:56Z",
+          "artifact": "/Users/tom/dev/demo/projectx/data/github-star/openclaw-openclaw-star-history.csv",
           "color": "#38bdf8"
         },
         {
@@ -840,19 +243,140 @@
           "agent": "star-visualizer",
           "label": "Plot star history",
           "status": "done",
-          "summary": "Purple chart for openai/codex (7-day stars)",
+          "summary": "Chart ready",
+          "startedAt": "2026-06-05T22:53:58Z",
+          "finishedAt": "2026-06-05T22:54:25Z",
+          "artifact": "",
           "color": "#a78bfa"
         }
       ],
-      "workspaceRoot": "/Users/tom/dev/agenthippo-vscode",
-      "sourcePath": "/Users/tom/dev/agenthippo-vscode/.agent-hippo/fleet-workflows/history/star-pipeline-20260530-182847.json"
+      "workspaceRoot": "/Users/tom/dev/demo/projectx",
+      "sourcePath": "/Users/tom/dev/demo/projectx/.agent-hippo/fleet-workflows/history/star-pipeline-20260605-224413.json"
+    },
+    {
+      "workflowId": "star-pipeline",
+      "runId": "20260605-223339",
+      "title": "GitHub Star Pipeline",
+      "subtitle": "fishaudio/fish-speech (30 days)",
+      "status": "done",
+      "kind": "history",
+      "startedAt": "2026-06-05T22:33:39Z",
+      "updatedAt": "2026-06-05T22:36:16Z",
+      "finishedAt": "2026-06-05T22:36:16Z",
+      "archivedAt": "2026-06-05T22:36:16Z",
+      "artifact": "/Users/tom/dev/demo/projectx/.agent-hippo/fleet-workflows/history/star-pipeline-20260605-223339.json",
+      "orchestrator": {
+        "agent": "star-coordinator",
+        "label": "Star Coordinator",
+        "status": "done",
+        "summary": "fishaudio/fish-speech: 668 stars in 30 days, chart ready"
+      },
+      "steps": [
+        {
+          "step": 1,
+          "role": "worker",
+          "agent": "joker1",
+          "label": "Warm-up joke",
+          "status": "done",
+          "summary": "Joke delivered",
+          "startedAt": "2026-06-05T22:33:41Z",
+          "finishedAt": "2026-06-05T22:34:49Z",
+          "artifact": "",
+          "color": "#fbbf24"
+        },
+        {
+          "step": 2,
+          "role": "worker",
+          "agent": "github-star-history",
+          "label": "Collect 30-day stars",
+          "status": "done",
+          "summary": "668 stars over 30 days",
+          "startedAt": "2026-06-05T22:34:51Z",
+          "finishedAt": "2026-06-05T22:35:51Z",
+          "artifact": "/Users/tom/dev/demo/projectx/data/github-star/fishaudio-fish-speech-star-history.csv",
+          "color": "#38bdf8"
+        },
+        {
+          "step": 3,
+          "role": "worker",
+          "agent": "star-visualizer",
+          "label": "Plot star history",
+          "status": "done",
+          "summary": "Purple chart in Spotlight",
+          "startedAt": "2026-06-05T22:35:51Z",
+          "finishedAt": "2026-06-05T22:36:15Z",
+          "artifact": "/Users/tom/dev/demo/projectx/.agent-hippo/analytics/views/star-visualizer/charts/star-data-widget.html",
+          "color": "#a78bfa"
+        }
+      ],
+      "workspaceRoot": "/Users/tom/dev/demo/projectx",
+      "sourcePath": "/Users/tom/dev/demo/projectx/.agent-hippo/fleet-workflows/history/star-pipeline-20260605-223339.json"
+    },
+    {
+      "workflowId": "star-pipeline",
+      "runId": "20260605-220504",
+      "title": "GitHub Star Pipeline",
+      "subtitle": "fishaudio/fish-speech (30 days)",
+      "status": "done",
+      "kind": "history",
+      "startedAt": "2026-06-05T22:05:04.268184Z",
+      "updatedAt": "2026-06-05T22:31:23Z",
+      "finishedAt": "2026-06-05T22:31:23Z",
+      "archivedAt": "2026-06-05T22:31:23Z",
+      "artifact": "/Users/tom/dev/demo/projectx/.agent-hippo/fleet-workflows/history/star-pipeline-20260605-220504.json",
+      "orchestrator": {
+        "agent": "star-coordinator",
+        "label": "Star Coordinator",
+        "status": "done",
+        "summary": "Aborted stale run (coordinator never completed step 2)"
+      },
+      "steps": [
+        {
+          "step": 1,
+          "role": "worker",
+          "agent": "joker1",
+          "label": "Warm-up joke",
+          "status": "done",
+          "summary": "test",
+          "startedAt": "",
+          "finishedAt": "2026-06-05T22:19:13Z",
+          "artifact": "",
+          "color": "#fbbf24"
+        },
+        {
+          "step": 2,
+          "role": "worker",
+          "agent": "github-star-history",
+          "label": "Collect 30-day stars",
+          "status": "pending",
+          "summary": "",
+          "startedAt": "",
+          "finishedAt": "",
+          "artifact": "",
+          "color": "#38bdf8"
+        },
+        {
+          "step": 3,
+          "role": "worker",
+          "agent": "star-visualizer",
+          "label": "Plot star history",
+          "status": "pending",
+          "summary": "",
+          "startedAt": "",
+          "finishedAt": "",
+          "artifact": "",
+          "color": "#a78bfa"
+        }
+      ],
+      "workspaceRoot": "/Users/tom/dev/demo/projectx",
+      "sourcePath": "/Users/tom/dev/demo/projectx/.agent-hippo/fleet-workflows/history/star-pipeline-20260605-220504.json"
     }
   ],
   "diagnostics": {
     "workspaces": [
-      "/Users/tom/dev/agenthippo-vscode"
+      "/Users/tom/dev/demo/projectx"
     ],
     "cliActive": true,
-    "workflowCount": 8
+    "workflowCount": 3
   }
 }
