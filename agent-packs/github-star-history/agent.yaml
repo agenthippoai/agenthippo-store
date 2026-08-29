@@ -1,0 +1,18 @@
+apiVersion: agenthippo.ai/v1
+kind: Agent
+metadata:
+  name: github-star-history
+  version: 0.1.0
+  author: tom
+  description: "Collect GitHub repository star history and export daily cumulative counts to CSV."
+
+spec:
+  engine: cursor
+  model: auto
+
+  skills: []
+
+  permissions:
+    fileAccess: full
+
+  visibility: internal
