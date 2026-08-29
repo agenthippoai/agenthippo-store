@@ -2,14 +2,15 @@
 
 Build interactive Spotlight charts from CSV files under `data/`.
 
-## Live Fleet 3 (star-pipeline step 3)
+## Live Fleet 4 (star-pipeline step 3)
 
 ```bash
-FW=".agent-hippo/scripts/fleet-workflow.sh"
-"$FW" step --workflow star-pipeline --step 3 --agent star-visualizer \
+LF4=".agent-hippo/analytics/views/live-fleet-4"
+FW="$LF4/scripts/fleet-workflow.sh"
+[[ -x "$FW" ]] && "$FW" step --workflow star-pipeline --step 3 --agent star-visualizer \
   --label "Plot star history" --status in_progress
 # ... build chart ...
-"$FW" step --workflow star-pipeline --step 3 --agent star-visualizer \
+[[ -x "$FW" ]] && "$FW" step --workflow star-pipeline --step 3 --agent star-visualizer \
   --label "Plot star history" --status done \
   --summary "Purple chart ready in Star Visualizer"
 ```
