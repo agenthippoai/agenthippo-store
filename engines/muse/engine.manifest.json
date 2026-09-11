@@ -1,0 +1,24 @@
+{
+  "version": 2,
+  "id": "muse",
+  "displayName": "Muse Code",
+  "description": "Meta Muse Code CLI engine (headless muse exec, JSONL streaming, parallel subagents). Uses your Meta login/META_API_KEY, or routes to LiteLLM models via a bundled local shim.",
+  "tags": ["engine", "cli", "meta", "muse-code", "litellm"],
+  "entry": "./engine.mjs",
+  "engineExport": "MuseCodeCliEngine",
+  "homeEnvVar": "MUSE_HOME",
+  "workspaceSync": {
+    "enabled": true,
+    "dir": ".muse",
+    "rulesFile": "AGENTS.md",
+    "includeSkills": true,
+    "includeRules": true
+  },
+  "promptInjection": {
+    "mode": "message-suffix"
+  },
+  "model": {
+    "defaultModel": "muse-spark-1.2",
+    "apiKeyEnvVar": "META_API_KEY"
+  }
+}
