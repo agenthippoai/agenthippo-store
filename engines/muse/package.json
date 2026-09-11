@@ -1,0 +1,7 @@
+{
+  "name": "agenthippo-engine-muse",
+  "version": "1.0.0",
+  "description": "Meta Muse Code CLI engine (headless muse exec, JSONL streaming, parallel subagents). Uses your Meta login/META_API_KEY, or routes to LiteLLM models via a bundled local shim.",
+  "private": true,
+  "type": "module"
+}
